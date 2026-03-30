@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OperaLog — Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060A0F;
+    --surface: #0D1420;
+    --green: #00C88C;
+    --green-dim: rgba(0,200,140,0.15);
+    --amber: #F5C842;
+    --text: #FFFFFF;
+    --text-muted: #A0AEC0;
+    --border: rgba(255,255,255,0.08);
+    --error: #FF4D6A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,140,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,140,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,200,140,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--green);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: #000;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .logo-text span { color: var(--green); }
+
+  .login-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .login-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    font-weight: 500;
+  }
+
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.15s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--green);
+    background: rgba(0,200,140,0.05);
+    box-shadow: 0 0 0 3px rgba(0,200,140,0.1);
+  }
+
+  input::placeholder { color: rgba(255,255,255,0.25); }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-login:hover {
+    background: #00e6a3;
+    box-shadow: 0 0 24px rgba(0,200,140,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-login:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .error-msg {
+    background: rgba(255,77,106,0.1);
+    border: 1px solid rgba(255,77,106,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #FF4D6A;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
+    display: none;
+  }
+
+  /* Seletor de idioma */
+  .idioma-sel {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .idioma-btn {
+    flex: 1;
+    padding: 7px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .idioma-btn.ativo {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .footer-login {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.2);
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="logo">
+    <div class="logo-icon">OL</div>
+    <div class="logo-text">Opera<span>Log</span></div>
+  </div>
+
+  <!-- Seletor de idioma -->
+  <div class="idioma-sel">
+    <button class="idioma-btn ativo" onclick="setIdioma('pt-BR', this)">🇧🇷 PT-BR</button>
+    <button class="idioma-btn" onclick="setIdioma('pt-PT', this)">🇵🇹 PT-PT</button>
+    <button class="idioma-btn" onclick="setIdioma('es', this)">🇪🇸 ES</button>
+  </div>
+
+  <div class="login-title" id="titulo">Bem-vindo</div>
+  <div class="login-sub" id="subtitulo">Acesse sua conta para continuar</div>
+
+  <div class="form-group">
+    <label id="label-email">E-mail</label>
+    <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+  </div>
+
+  <div class="form-group">
+    <label id="label-senha">Senha</label>
+    <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+  </div>
+
+  <button class="btn-login" id="btn-entrar" onclick="login()">Entrar</button>
+  <div class="error-msg" id="erro"></div>
+
+  <div class="footer-login">OperaLog v1.0 · 2025 · Produslog</div>
+</div>
+
+<script>
+  const TEXTOS = {
+    'pt-BR': {
+      titulo: 'Bem-vindo',
+      subtitulo: 'Acesse sua conta para continuar',
+      labelEmail: 'E-mail',
+      labelSenha: 'Senha',
+      btnEntrar: 'Entrar',
+      erroCredenciais: 'E-mail ou senha incorretos',
+      erroServidor: 'Erro de conexão. Tente novamente.'
+    },
+    'pt-PT': {
+      titulo: 'Bem-vindo',
+      subtitulo: 'Aceda à sua conta para continuar',
+      labelEmail: 'E-mail',
+      labelSenha: 'Palavra-passe',
+      btnEntrar: 'Entrar',
+      erroCredenciais: 'E-mail ou palavra-passe incorretos',
+      erroServidor: 'Erro de ligação. Tente novamente.'
+    },
+    'es': {
+      titulo: 'Bienvenido',
+      subtitulo: 'Acceda a su cuenta para continuar',
+      labelEmail: 'Correo electrónico',
+      labelSenha: 'Contraseña',
+      btnEntrar: 'Iniciar sesión',
+      erroCredenciais: 'Correo o contraseña incorrectos',
+      erroServidor: 'Error de conexión. Inténtelo de nuevo.'
+    }
+  };
+
+  let idiomaAtual = 'pt-BR';
+
+  function setIdioma(idioma, btn) {
+    idiomaAtual = idioma;
+    document.querySelectorAll('.idioma-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    const t = TEXTOS[idioma];
+    document.getElementById('titulo').textContent = t.titulo;
+    document.getElementById('subtitulo').textContent = t.subtitulo;
+    document.getElementById('label-email').textContent = t.labelEmail;
+    document.getElementById('label-senha').textContent = t.labelSenha;
+    document.getElementById('btn-entrar').textContent = t.btnEntrar;
+    document.getElementById('erro').style.display = 'none';
+    localStorage.setItem('operalog_idioma', idioma);
+    document.documentElement.lang = idioma;
+  }
+
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const senha = document.getElementById('senha').value;
+    const erro = document.getElementById('erro');
+    const btn = document.getElementById('btn-entrar');
+    const t = TEXTOS[idiomaAtual];
+
+    erro.style.display = 'none';
+    if (!email || !senha) return;
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        erro.textContent = t.erroCredenciais;
+        erro.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = t.btnEntrar;
+        return;
+      }
+
+      // Salvar token e idioma
+      localStorage.setItem('operalog_token', data.token);
+      localStorage.setItem('operalog_usuario', JSON.stringify(data.usuario));
+      localStorage.setItem('operalog_idioma', idiomaAtual);
+
+      // Redirecionar para dashboard
+      window.location.href = '/dashboard.html';
+
+    } catch (err) {
+      erro.textContent = t.erroServidor;
+      erro.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = t.btnEntrar;
+    }
+  }
+
+  // Enter para logar
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  // Restaurar idioma salvo
+  const idiomasSalvo = localStorage.getItem('operalog_idioma');
+  if (idiomasSalvo && idiomasSalvo !== 'pt-BR') {
+    const btn = document.querySelector(`[onclick*="${idiomasSalvo}"]`);
+    if (btn) setIdioma(idiomasSalvo, btn);
+  }
+
+  // Se já logado, redirecionar
+  if (localStorage.getItem('operalog_token')) {
+    window.location.href = '/dashboard.html';
+  }
+</script>
+</body>
+</html>
