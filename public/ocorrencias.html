@@ -21,43 +21,18 @@
   .oc-item.alerta { border-left-color: var(--amber); }
   .oc-item.positivo { border-left-color: var(--green); }
   .oc-item.informativo { border-left-color: var(--blue); }
-
   .oc-item:hover { border-color: rgba(255,255,255,0.15); }
 
-  .oc-header {
-    padding: 14px 18px 10px;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 12px;
-  }
-
-  .oc-titulo {
-    font-family: var(--font-display);
-    font-size: 15px; font-weight: 800; color: var(--text);
-    flex: 1;
-  }
-
+  .oc-header { padding: 14px 18px 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .oc-titulo { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--text); flex: 1; }
   .oc-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-  .oc-meta {
-    padding: 0 18px 10px;
-    display: flex; gap: 16px; flex-wrap: wrap;
-    font-size: 12px; font-weight: 600;
-    color: var(--text-muted); font-family: var(--font-mono);
-  }
-
+  .oc-meta { padding: 0 18px 10px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
   .oc-meta span { display: flex; align-items: center; gap: 4px; }
 
-  .oc-desc {
-    padding: 0 18px 10px;
-    font-size: 13px; font-weight: 500;
-    color: var(--text-muted); line-height: 1.5;
-  }
+  .oc-desc { padding: 0 18px 10px; font-size: 13px; font-weight: 500; color: var(--text-muted); line-height: 1.5; }
 
-  .oc-actions {
-    padding: 10px 18px 14px;
-    display: flex; gap: 8px;
-    border-top: 1px solid var(--border);
-  }
+  .oc-actions { padding: 10px 18px 14px; display: flex; gap: 8px; border-top: 1px solid var(--border); flex-wrap: wrap; }
 
   .btn-sm {
     padding: 7px 16px; border-radius: 6px;
@@ -70,6 +45,7 @@
   .btn-sm:hover { border-color: var(--green); color: var(--green); }
   .btn-sm.green { background: var(--green); color: #000; border-color: var(--green); }
   .btn-sm.red { background: var(--red-dim); color: var(--red); border-color: rgba(255,77,106,0.3); }
+  .btn-sm.red:hover { background: rgba(255,77,106,0.25); }
 
   .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 
@@ -84,24 +60,10 @@
   .filtro-btn.ativo { background: var(--green-dim); border-color: var(--green); color: var(--green); }
   .filtro-btn:hover { border-color: var(--green); }
 
-  .resolucao-box {
-    padding: 12px 18px;
-    background: var(--green-dim);
-    border-top: 1px solid rgba(0,200,140,0.2);
-    font-size: 13px; font-weight: 500; color: var(--text);
-  }
+  .resolucao-box { padding: 12px 18px; background: var(--green-dim); border-top: 1px solid rgba(0,200,140,0.2); font-size: 13px; font-weight: 500; color: var(--text); }
+  .resolucao-label { font-size: 11px; font-weight: 700; color: var(--green); font-family: var(--font-mono); margin-bottom: 4px; }
 
-  .resolucao-label {
-    font-size: 11px; font-weight: 700;
-    color: var(--green); font-family: var(--font-mono);
-    margin-bottom: 4px;
-  }
-
-  .empty-state {
-    text-align: center; padding: 60px 20px;
-    color: var(--text-muted);
-  }
-
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
   .empty-icon { font-size: 48px; margin-bottom: 12px; }
   .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
 </style>
@@ -147,7 +109,6 @@
       <button class="btn btn-primary" onclick="abrirModal()">+ Nova Ocorrência</button>
     </div>
 
-    <!-- Filtros -->
     <div class="filtros">
       <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todas</button>
       <button class="filtro-btn" onclick="filtrar('aberta',this)">🔓 Abertas</button>
@@ -197,15 +158,11 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Operação</label>
-          <select class="form-select" id="oc-operacao">
-            <option value="">— Selecione —</option>
-          </select>
+          <select class="form-select" id="oc-operacao"><option value="">— Selecione —</option></select>
         </div>
         <div class="form-group">
           <label class="form-label">Transportadora</label>
-          <select class="form-select" id="oc-transp">
-            <option value="">— Selecione —</option>
-          </select>
+          <select class="form-select" id="oc-transp"><option value="">— Selecione —</option></select>
         </div>
       </div>
       <div class="form-group">
@@ -256,20 +213,11 @@ async function carregarOcs() {
 }
 
 async function carregarSelects() {
-  const [ops, ts] = await Promise.all([
-    api('/api/operacoes'), api('/api/transportadoras')
-  ]);
-
+  const [ops, ts] = await Promise.all([api('/api/operacoes'), api('/api/transportadoras')]);
   const selOp = document.getElementById('oc-operacao');
   const selTs = document.getElementById('oc-transp');
-
-  (ops || []).forEach(o => {
-    selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`;
-  });
-
-  (ts || []).forEach(t => {
-    selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
-  });
+  (ops || []).forEach(o => { selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`; });
+  (ts || []).forEach(t => { selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
 }
 
 function filtrar(tipo, btn) {
@@ -281,7 +229,6 @@ function filtrar(tipo, btn) {
 
 function renderOcs() {
   let ocs = todasOcs;
-
   if (filtroAtual === 'aberta') ocs = ocs.filter(o => o.status === 'aberta');
   else if (filtroAtual === 'em_andamento') ocs = ocs.filter(o => o.status === 'em_andamento');
   else if (filtroAtual === 'resolvida') ocs = ocs.filter(o => o.status === 'resolvida');
@@ -305,7 +252,7 @@ function renderOcs() {
         <div class="oc-titulo">${ICONS[oc.severidade] || '⚪'} ${oc.titulo}</div>
         <div class="oc-badges">
           <span class="sev-badge sev-${oc.severidade}">${oc.severidade.toUpperCase()}</span>
-          <span class="status-pill ${oc.status === 'resolvida' ? 'status-resolvida' : oc.status === 'em_andamento' ? 'status-alerta' : 'status-critico'}">
+          <span class="status-pill ${oc.status === 'resolvida' ? 'status-ativo' : oc.status === 'em_andamento' ? 'status-alerta' : 'status-critico'}">
             ${STATUS_LABEL[oc.status] || oc.status}
           </span>
         </div>
@@ -323,12 +270,12 @@ function renderOcs() {
           <div class="resolucao-label">✅ RESOLUÇÃO ADOTADA</div>
           <div>${oc.resolucao}</div>
         </div>` : ''}
-      ${oc.status !== 'resolvida' ? `
-        <div class="oc-actions">
-          <button class="btn-sm green" onclick="abrirResolver('${oc.id}')">✅ Resolver</button>
-          <button class="btn-sm" onclick="window.location='/pdca.html?oc=${oc.id}'">📊 Criar Plano PDCA</button>
-          <button class="btn-sm" onclick="editarOc(${JSON.stringify(oc).replace(/"/g,'&quot;')})">✏️ Editar</button>
-        </div>` : ''}
+      <div class="oc-actions">
+        ${oc.status !== 'resolvida' ? `<button class="btn-sm green" onclick="abrirResolver('${oc.id}')">✅ Resolver</button>` : ''}
+        <button class="btn-sm" onclick="window.location='/pdca.html?oc=${oc.id}'">📊 PDCA</button>
+        <button class="btn-sm" onclick="editarOc(${JSON.stringify(oc).replace(/"/g,'&quot;')})">✏️ Editar</button>
+        ${isAdmin() ? `<button class="btn-sm red" onclick="deletarOc('${oc.id}', '${oc.titulo.replace(/'/g,"\\'")}')">🗑️ Excluir</button>` : ''}
+      </div>
     </div>
   `).join('');
 }
@@ -358,18 +305,11 @@ async function salvarOc() {
     transportadora_id: document.getElementById('oc-transp').value || null,
     descricao: document.getElementById('oc-desc').value.trim()
   };
-
   if (!body.titulo) { alert('Título é obrigatório'); return; }
-
   const url = id ? `/api/ocorrencias/${id}` : '/api/ocorrencias';
   const method = id ? 'PUT' : 'POST';
   const res = await apiPost(url, body, method);
-
-  if (res) {
-    fecharModal();
-    carregarOcs();
-    toast('Ocorrência registrada!', 'success');
-  }
+  if (res) { fecharModal(); carregarOcs(); toast('Ocorrência registrada!', 'success'); }
 }
 
 function abrirResolver(id) {
@@ -384,16 +324,16 @@ async function confirmarResolver() {
   const id = document.getElementById('resolver-id').value;
   const resolucao = document.getElementById('resolver-texto').value.trim();
   if (!resolucao) { alert('Descreva a resolução adotada'); return; }
-
   const res = await apiPost(`/api/ocorrencias/${id}/resolver`, { resolucao }, 'PUT');
-  if (res) {
-    fecharResolver();
-    carregarOcs();
-    toast('Ocorrência resolvida! ✅', 'success');
-  }
+  if (res) { fecharResolver(); carregarOcs(); toast('Ocorrência resolvida! ✅', 'success'); }
 }
 
-// Verificar query param ?nova=1
+async function deletarOc(id, titulo) {
+  if (!confirm(`Excluir a ocorrência "${titulo}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await apiDelete(`/api/ocorrencias/${id}`);
+  if (res) { toast('Ocorrência excluída', 'success'); carregarOcs(); }
+}
+
 if (new URLSearchParams(window.location.search).get('nova') === '1') {
   window.addEventListener('load', () => setTimeout(abrirModal, 300));
 }
