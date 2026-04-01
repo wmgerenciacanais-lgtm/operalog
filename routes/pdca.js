@@ -1,470 +1,185 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OperaLog — Board PDCA</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
-<style>
-  /* Override main padding para board full width */
-  .main { padding: 24px 20px; }
+const express = require('express');
+const router = express.Router();
+const db = require('../database/db');
+const auth = require('./middleware');
 
-  .board {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    align-items: start;
+const ETAPAS = ['plan', 'do', 'check', 'act', 'concluido'];
+
+// GET /api/pdca — retorna board com colunas
+router.get('/', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT p.*,
+        o.cliente as operacao_nome,
+        t.nome as transportadora_nome,
+        (SELECT json_agg(h ORDER BY h.criado_em DESC) FROM pdca_historico h WHERE h.plano_id = p.id) as historico
+      FROM pdca_planos p
+      LEFT JOIN operacoes o ON p.operacao_id = o.id
+      LEFT JOIN transportadoras t ON p.transportadora_id = t.id
+      WHERE p.etapa != 'concluido'
+      ORDER BY p.criado_em DESC
+    `);
+
+    const board = { plan: [], do: [], check: [], act: [] };
+    rows.forEach(p => {
+      if (board[p.etapa]) board[p.etapa].push(p);
+    });
+
+    res.json({ board });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .coluna {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden;
+// GET /api/pdca/concluidos
+router.get('/concluidos', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT p.*, o.cliente as operacao_nome, t.nome as transportadora_nome
+       FROM pdca_planos p
+       LEFT JOIN operacoes o ON p.operacao_id = o.id
+       LEFT JOIN transportadoras t ON p.transportadora_id = t.id
+       WHERE p.etapa = 'concluido'
+       ORDER BY p.atualizado_em DESC`,
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .coluna-header {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
+// GET /api/pdca/:id
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT p.*, o.cliente as operacao_nome, t.nome as transportadora_nome,
+        (SELECT json_agg(h ORDER BY h.criado_em DESC) FROM pdca_historico h WHERE h.plano_id = p.id) as historico
+       FROM pdca_planos p
+       LEFT JOIN operacoes o ON p.operacao_id = o.id
+       LEFT JOIN transportadoras t ON p.transportadora_id = t.id
+       WHERE p.id = $1`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ erro: 'Plano não encontrado' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .coluna-title {
-    font-family: var(--font-display);
-    font-size: 13px; font-weight: 800;
-    display: flex; align-items: center; gap: 8px;
+// POST /api/pdca
+router.post('/', auth, async (req, res) => {
+  const { titulo, descricao, responsavel, prazo, operacao_id, transportadora_id, meta } = req.body;
+  if (!titulo || !responsavel) return res.status(400).json({ erro: 'Título e responsável são obrigatórios' });
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO pdca_planos (titulo, descricao, responsavel, prazo, operacao_id, transportadora_id, meta, criado_por)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [titulo, descricao || null, responsavel, prazo || null,
+       operacao_id || null, transportadora_id || null, meta || null, req.usuario.id]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .coluna-letter {
-    width: 28px; height: 28px; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 800; font-family: var(--font-display);
+// PUT /api/pdca/:id
+router.put('/:id', auth, async (req, res) => {
+  const { titulo, descricao, responsavel, prazo, operacao_id, transportadora_id, meta, resultado } = req.body;
+  try {
+    const { rows } = await db.query(
+      `UPDATE pdca_planos SET
+        titulo = COALESCE($1, titulo),
+        descricao = $2,
+        responsavel = COALESCE($3, responsavel),
+        prazo = $4,
+        operacao_id = $5,
+        transportadora_id = $6,
+        meta = $7,
+        resultado = $8,
+        atualizado_em = NOW()
+       WHERE id = $9 RETURNING *`,
+      [titulo, descricao, responsavel, prazo, operacao_id, transportadora_id, meta, resultado, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ erro: 'Plano não encontrado' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .coluna-count {
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    color: var(--text-muted); background: var(--surface2);
-    padding: 2px 7px; border-radius: 10px;
+// PUT /api/pdca/:id/avancar
+router.put('/:id/avancar', auth, async (req, res) => {
+  const { comentario } = req.body;
+  if (!comentario) return res.status(400).json({ erro: 'Comentário é obrigatório' });
+
+  try {
+    const { rows: atual } = await db.query('SELECT etapa FROM pdca_planos WHERE id = $1', [req.params.id]);
+    if (!atual.length) return res.status(404).json({ erro: 'Plano não encontrado' });
+
+    const etapaAtual = atual[0].etapa;
+    const idx = ETAPAS.indexOf(etapaAtual);
+    if (idx === -1 || idx >= ETAPAS.length - 1) return res.status(400).json({ erro: 'Não é possível avançar desta etapa' });
+
+    const etapaNova = ETAPAS[idx + 1];
+
+    await db.query('UPDATE pdca_planos SET etapa = $1, atualizado_em = NOW() WHERE id = $2', [etapaNova, req.params.id]);
+    await db.query(
+      'INSERT INTO pdca_historico (plano_id, etapa_anterior, etapa_nova, comentario, alterado_por) VALUES ($1, $2, $3, $4, $5)',
+      [req.params.id, etapaAtual, etapaNova, comentario, req.usuario.id]
+    );
+
+    res.json({ etapa: etapaNova, mensagem: `Plano avançado para ${etapaNova.toUpperCase()}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .coluna-body {
-    padding: 10px;
-    display: flex; flex-direction: column; gap: 8px;
-    min-height: 120px;
+// PUT /api/pdca/:id/voltar
+router.put('/:id/voltar', auth, async (req, res) => {
+  const { comentario } = req.body;
+  if (!comentario) return res.status(400).json({ erro: 'Comentário é obrigatório' });
+
+  try {
+    const { rows: atual } = await db.query('SELECT etapa FROM pdca_planos WHERE id = $1', [req.params.id]);
+    if (!atual.length) return res.status(404).json({ erro: 'Plano não encontrado' });
+
+    const etapaAtual = atual[0].etapa;
+    const idx = ETAPAS.indexOf(etapaAtual);
+    if (idx <= 0) return res.status(400).json({ erro: 'Não é possível retroceder desta etapa' });
+
+    const etapaNova = ETAPAS[idx - 1];
+
+    await db.query('UPDATE pdca_planos SET etapa = $1, atualizado_em = NOW() WHERE id = $2', [etapaNova, req.params.id]);
+    await db.query(
+      'INSERT INTO pdca_historico (plano_id, etapa_anterior, etapa_nova, comentario, alterado_por) VALUES ($1, $2, $3, $4, $5)',
+      [req.params.id, etapaAtual, etapaNova, comentario, req.usuario.id]
+    );
+
+    res.json({ etapa: etapaNova, mensagem: `Plano retrocedido para ${etapaNova.toUpperCase()}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .pdca-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px;
-    transition: all 0.15s; cursor: pointer;
-    animation: fadeUp 0.3s ease both;
+// DELETE /api/pdca/:id
+router.delete('/:id', auth, async (req, res) => {
+  if (req.usuario.perfil !== 'admin') return res.status(403).json({ erro: 'Acesso negado' });
+  try {
+    const { rows } = await db.query('DELETE FROM pdca_planos WHERE id = $1 RETURNING id', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ erro: 'Plano não encontrado' });
+    res.json({ mensagem: 'Plano excluído com sucesso' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .pdca-card:hover {
-    border-color: rgba(255,255,255,0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  }
-
-  .pdca-card-title {
-    font-family: var(--font-display);
-    font-size: 13px; font-weight: 800; color: var(--text);
-    margin-bottom: 6px; line-height: 1.3;
-  }
-
-  .pdca-card-meta {
-    display: flex; flex-direction: column; gap: 4px;
-    font-size: 11px; font-weight: 600;
-    color: var(--text-muted); font-family: var(--font-mono);
-  }
-
-  .pdca-card-meta span { display: flex; align-items: center; gap: 5px; }
-
-  .prazo-ok { color: var(--green); }
-  .prazo-urgente { color: var(--amber); }
-  .prazo-atrasado { color: var(--red); }
-
-  .pdca-card-actions {
-    display: flex; gap: 6px; margin-top: 10px;
-    padding-top: 8px; border-top: 1px solid var(--border);
-  }
-
-  .card-btn {
-    flex: 1; padding: 5px; border-radius: 5px;
-    font-size: 11px; font-weight: 700; cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
-
-  .card-btn:hover { border-color: var(--green); color: var(--green); }
-  .card-btn.avancar { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .card-btn.voltar { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
-
-  .coluna-empty {
-    padding: 20px; text-align: center;
-    color: var(--text-muted); font-size: 12px; font-weight: 600;
-    border: 1px dashed var(--border); border-radius: 8px; margin: 4px;
-  }
-
-  /* Histórico no modal */
-  .historico-item {
-    display: flex; gap: 10px; align-items: flex-start;
-    padding: 8px 0; border-bottom: 1px solid var(--border);
-    font-size: 12px;
-  }
-
-  .historico-item:last-child { border-bottom: none; }
-
-  .hist-arrow {
-    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-    white-space: nowrap; padding: 2px 6px; border-radius: 4px;
-  }
-
-  .modal-lg { max-width: 680px; }
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div class="logo">
-    <div class="logo-icon">OL</div>
-    <div class="logo-text">Opera<span>Log</span></div>
-  </div>
-  <div class="topbar-center">
-    <div class="pulse"></div>
-    <span>PRODUSLOG · BOARD DE MELHORIA CONTÍNUA — PDCA</span>
-  </div>
-  <div class="topbar-right">
-    <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
-    <div class="user-menu" onclick="logout()">
-      <div class="user-avatar" id="user-initials">?</div>
-      <span class="user-name" id="user-name">Usuário</span>
-    </div>
-  </div>
-</div>
-
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-section">PRINCIPAL</div>
-    <a href="/dashboard.html" class="nav-item"><span class="nav-icon">◈</span> Visão Geral</a>
-    <a href="/operacoes.html" class="nav-item"><span class="nav-icon">⬡</span> Operações IN HOUSE</a>
-    <a href="/transportadoras.html" class="nav-item"><span class="nav-icon">◎</span> Transportadoras</a>
-    <a href="/pdca.html" class="nav-item ativo"><span class="nav-icon">▦</span> Planos PDCA</a>
-    <div class="sidebar-section">GESTÃO</div>
-    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
-    <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
-  </aside>
-
-  <main class="main">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Board PDCA</div>
-        <div class="page-sub">Planos de Melhoria Contínua — Plan → Do → Check → Act</div>
-      </div>
-      <div style="display:flex;gap:10px">
-        <a href="#" onclick="verConcluidos()" class="btn btn-ghost">✅ Concluídos</a>
-        <button class="btn btn-primary" onclick="abrirModal()">+ Novo Plano</button>
-      </div>
-    </div>
-
-    <!-- Board Kanban -->
-    <div class="board" id="board">
-      <div class="loading" style="grid-column:1/-1">Carregando board...</div>
-    </div>
-  </main>
-</div>
-
-<!-- Modal Novo/Editar Plano -->
-<div class="modal-overlay" id="modal-plano">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-titulo">Novo Plano PDCA</div>
-      <button class="modal-close" onclick="fecharModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="plano-id">
-      <div class="form-group">
-        <label class="form-label">Título do Plano *</label>
-        <input class="form-input" id="plano-titulo" placeholder="Ex: Reduzir atraso médio da JSL em 40% em 60 dias">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Responsável *</label>
-          <input class="form-input" id="plano-resp" placeholder="Nome do responsável">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Prazo</label>
-          <input class="form-input" type="date" id="plano-prazo">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Operação relacionada</label>
-          <select class="form-select" id="plano-op">
-            <option value="">— Nenhuma —</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Transportadora relacionada</label>
-          <select class="form-select" id="plano-transp">
-            <option value="">— Nenhuma —</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Meta (o que queremos atingir)</label>
-        <input class="form-input" id="plano-meta" placeholder="Ex: OTD JSL ≥ 95% por 3 meses consecutivos">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Descrição / Plano de ação</label>
-        <textarea class="form-textarea" style="min-height:100px" id="plano-desc"
-          placeholder="Descreva as ações a serem tomadas na etapa Plan..."></textarea>
-      </div>
-
-      <!-- Histórico (só ao editar) -->
-      <div id="historico-section" style="display:none">
-        <div class="form-label" style="margin-bottom:8px">📋 Histórico de movimentações</div>
-        <div id="historico-lista" style="max-height:150px;overflow-y:auto;background:var(--surface2);border-radius:8px;padding:8px 12px"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarPlano()">Salvar Plano</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Avançar Etapa -->
-<div class="modal-overlay" id="modal-avancar">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-header">
-      <div class="modal-title" id="avancar-titulo">Avançar Etapa</div>
-      <button class="modal-close" onclick="fecharAvancar()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="avancar-id">
-      <input type="hidden" id="avancar-tipo">
-      <div class="form-group">
-        <label class="form-label" id="avancar-label">Comentário sobre a movimentação</label>
-        <textarea class="form-textarea" style="min-height:100px" id="avancar-comentario"
-          placeholder="Descreva o que foi feito / verificado / decidido..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharAvancar()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-confirmar-avancar" onclick="confirmarAvancar()">Confirmar</button>
-    </div>
-  </div>
-</div>
-
-<script src="/shared.js"></script>
-<script>
-const COLUNAS = [
-  { key:'plan', label:'PLAN', subLabel:'Planejar', letter:'P', color:'var(--blue)', colorHex:'#4A9EFF' },
-  { key:'do', label:'DO', subLabel:'Executar', letter:'D', color:'var(--amber)', colorHex:'#F5C842' },
-  { key:'check', label:'CHECK', subLabel:'Verificar', letter:'C', color:'var(--green)', colorHex:'#00C88C' },
-  { key:'act', label:'ACT', subLabel:'Agir', letter:'A', color:'var(--purple)', colorHex:'#C084FC' },
-];
-
-function prazoClass(prazo) {
-  if (!prazo) return '';
-  const diff = Math.floor((new Date(prazo) - new Date()) / 86400000);
-  if (diff < 0) return 'prazo-atrasado';
-  if (diff <= 7) return 'prazo-urgente';
-  return 'prazo-ok';
-}
-
-function prazoLabel(prazo) {
-  if (!prazo) return null;
-  const diff = Math.floor((new Date(prazo) - new Date()) / 86400000);
-  if (diff < 0) return `⚠️ Atrasado ${Math.abs(diff)}d`;
-  if (diff === 0) return '🔴 Vence hoje';
-  if (diff <= 7) return `⚡ ${diff}d restantes`;
-  return `📅 ${formatDate(prazo)}`;
-}
-
-async function carregarBoard() {
-  const data = await api('/api/pdca');
-  if (!data) return;
-  renderBoard(data.board);
-}
-
-function renderBoard(board) {
-  const el = document.getElementById('board');
-  el.innerHTML = COLUNAS.map(col => {
-    const cards = board[col.key] || [];
-    return `
-      <div class="coluna">
-        <div class="coluna-header" style="border-bottom-color:${col.color}40">
-          <div class="coluna-title">
-            <div class="coluna-letter" style="background:${col.color}20;color:${col.color}">${col.letter}</div>
-            <div>
-              <div style="color:${col.color};font-size:13px;font-weight:800">${col.label}</div>
-              <div style="font-size:10px;font-weight:600;color:var(--text-muted);font-family:var(--font-mono)">${col.subLabel}</div>
-            </div>
-          </div>
-          <span class="coluna-count">${cards.length}</span>
-        </div>
-        <div class="coluna-body">
-          ${cards.length ? cards.map((p,i) => renderCard(p, col, i)).join('') :
-            `<div class="coluna-empty">Nenhum plano nesta etapa</div>`}
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function renderCard(p, col, i) {
-  const prazoC = prazoClass(p.prazo);
-  const prazoL = prazoLabel(p.prazo);
-  const isFirst = col.key === 'plan';
-  const isLast = col.key === 'act';
-
-  return `
-    <div class="pdca-card" style="animation-delay:${i*0.06}s">
-      <div class="pdca-card-title">${p.titulo}</div>
-      <div class="pdca-card-meta">
-        <span>👤 ${p.responsavel || '—'}</span>
-        ${prazoL ? `<span class="${prazoC}">${prazoL}</span>` : ''}
-        ${p.operacao_nome ? `<span>📦 ${p.operacao_nome}</span>` : ''}
-        ${p.transportadora_nome ? `<span>🚛 ${p.transportadora_nome}</span>` : ''}
-        ${p.meta ? `<span style="color:var(--text-muted)">🎯 ${p.meta.substring(0,40)}${p.meta.length>40?'...':''}</span>` : ''}
-      </div>
-      <div class="pdca-card-actions">
-        ${!isFirst ? `<button class="card-btn voltar" onclick="abrirAvancar('${p.id}','voltar')">← Voltar</button>` : ''}
-        <button class="card-btn" onclick="abrirEditar(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
-        ${!isLast ? `<button class="card-btn avancar" onclick="abrirAvancar('${p.id}','avancar')">→ Avançar</button>` :
-          `<button class="card-btn avancar" onclick="abrirAvancar('${p.id}','avancar')">✅ Concluir</button>`}
-        ${usuario.perfil === 'admin' ? `<button class="card-btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,77,106,0.3)" onclick="excluirPlano('${p.id}','${p.titulo.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
-      </div>
-    </div>`;
-}
-
-async function carregarSelects() {
-  const [ops, ts] = await Promise.all([api('/api/operacoes'), api('/api/transportadoras')]);
-  const selOp = document.getElementById('plano-op');
-  const selTs = document.getElementById('plano-transp');
-  (ops||[]).forEach(o => { selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`; });
-  (ts||[]).forEach(t => { selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
-}
-
-function abrirModal(p = null) {
-  document.getElementById('plano-id').value = p?.id || '';
-  document.getElementById('plano-titulo').value = p?.titulo || '';
-  document.getElementById('plano-resp').value = p?.responsavel || '';
-  document.getElementById('plano-prazo').value = p?.prazo?.split('T')[0] || '';
-  document.getElementById('plano-op').value = p?.operacao_id || '';
-  document.getElementById('plano-transp').value = p?.transportadora_id || '';
-  document.getElementById('plano-meta').value = p?.meta || '';
-  document.getElementById('plano-desc').value = p?.descricao || '';
-  document.getElementById('modal-titulo').textContent = p ? 'Editar Plano' : 'Novo Plano PDCA';
-
-  // Histórico
-  const histSection = document.getElementById('historico-section');
-  if (p?.historico?.length) {
-    histSection.style.display = 'block';
-    document.getElementById('historico-lista').innerHTML = p.historico.map(h => `
-      <div class="historico-item">
-        <span class="hist-arrow" style="background:var(--surface);border:1px solid var(--border);color:var(--text)">
-          ${h.etapa_anterior?.toUpperCase()} → ${h.etapa_nova?.toUpperCase()}
-        </span>
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--text)">${h.comentario || '—'}</div>
-          <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">${h.alterado_por || ''} · ${tempoAtras(h.data)}</div>
-        </div>
-      </div>`).join('');
-  } else {
-    histSection.style.display = 'none';
-  }
-
-  document.getElementById('modal-plano').classList.add('aberto');
-}
-
-function abrirEditar(p) { abrirModal(p); }
-function fecharModal() { document.getElementById('modal-plano').classList.remove('aberto'); }
-
-async function salvarPlano() {
-  const id = document.getElementById('plano-id').value;
-  const body = {
-    titulo: document.getElementById('plano-titulo').value.trim(),
-    responsavel: document.getElementById('plano-resp').value.trim(),
-    prazo: document.getElementById('plano-prazo').value || null,
-    operacao_id: document.getElementById('plano-op').value || null,
-    transportadora_id: document.getElementById('plano-transp').value || null,
-    meta: document.getElementById('plano-meta').value.trim(),
-    descricao: document.getElementById('plano-desc').value.trim()
-  };
-
-  if (!body.titulo || !body.responsavel) { alert('Título e responsável são obrigatórios'); return; }
-
-  const url = id ? `/api/pdca/${id}` : '/api/pdca';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiPost(url, body, method);
-
-  if (res) {
-    fecharModal();
-    carregarBoard();
-    toast(id ? 'Plano atualizado!' : 'Plano criado!', 'success');
-  }
-}
-
-function abrirAvancar(id, tipo) {
-  document.getElementById('avancar-id').value = id;
-  document.getElementById('avancar-tipo').value = tipo;
-  const labels = {
-    avancar: 'Descreva o que foi feito antes de avançar para a próxima etapa',
-    voltar: 'Explique por que está retrocedendo esta etapa'
-  };
-  const titulos = {
-    avancar: '→ Avançar Etapa',
-    voltar: '← Retroceder Etapa'
-  };
-  document.getElementById('avancar-label').textContent = labels[tipo];
-  document.getElementById('avancar-titulo').textContent = titulos[tipo];
-  document.getElementById('avancar-comentario').value = '';
-  document.getElementById('modal-avancar').classList.add('aberto');
-}
-
-function fecharAvancar() { document.getElementById('modal-avancar').classList.remove('aberto'); }
-
-async function confirmarAvancar() {
-  const id = document.getElementById('avancar-id').value;
-  const tipo = document.getElementById('avancar-tipo').value;
-  const comentario = document.getElementById('avancar-comentario').value.trim();
-
-  if (!comentario) { alert('Adicione um comentário sobre a movimentação'); return; }
-
-  const res = await apiPost(`/api/pdca/${id}/${tipo}`, { comentario }, 'PUT');
-  if (res) {
-    fecharAvancar();
-    carregarBoard();
-    toast(tipo === 'avancar' ? '→ Etapa avançada!' : '← Etapa retrocedida', tipo === 'avancar' ? 'success' : 'warning');
-  }
-}
-
-async function verConcluidos() {
-  const data = await api('/api/pdca/concluidos');
-  if (!data?.length) { toast('Nenhum plano concluído ainda', 'info'); return; }
-  alert(`${data.length} planos concluídos. Módulo de histórico em breve!`);
-}
-
-async function excluirPlano(id, titulo) {
-  if (!confirm(`⚠️ Tem certeza que deseja excluir este plano PDCA?\n\n"${titulo}"\n\nEssa ação é permanente e não pode ser desfeita.`)) return;
-  const res = await fetch(`/api/pdca/${id}`, {
-    method: 'DELETE',
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  if (res.ok) {
-    toast('Plano PDCA excluído com sucesso.', 'success');
-    carregarBoard();
-  } else {
-    toast('Erro ao excluir plano.', 'error');
-  }
-}
-
-carregarBoard();
-carregarSelects();
-</script>
-</body>
-</html>
+module.exports = router;
