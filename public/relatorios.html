@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OperaLog — Relatórios</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared.css">
+<style>
+  .rel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 32px; }
+
+  .rel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px;
+    transition: all 0.2s; cursor: pointer;
+    animation: fadeUp 0.3s ease both;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .rel-card:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+  .rel-icon { font-size: 32px; }
+
+  .rel-titulo { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--text); }
+
+  .rel-desc { font-size: 13px; font-weight: 500; color: var(--text-muted); line-height: 1.5; flex: 1; }
+
+  .rel-action {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700;
+    color: var(--green); font-family: var(--font-mono);
+    margin-top: 4px;
+  }
+
+  .filtro-periodo {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+    margin-bottom: 24px; flex-wrap: wrap;
+  }
+
+  .filtro-periodo label { font-size: 13px; font-weight: 700; color: var(--text); }
+
+  .period-select {
+    padding: 8px 14px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; outline: none; cursor: pointer;
+  }
+
+  .period-select:focus { border-color: var(--green); }
+  .period-select option { background: var(--surface); }
+
+  .preview-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .preview-area.visivel { display: block; }
+
+  .preview-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .preview-title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--text); }
+
+  .preview-body { padding: 20px; }
+
+  .kpi-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+
+  .kpi-mini {
+    background: var(--surface2);
+    border-radius: 10px; padding: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .kpi-mini-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono); margin-bottom: 6px; }
+  .kpi-mini-value { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
+
+  .section-title { font-family: var(--font-display); font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 12px; margin-top: 20px; }
+
+  .table { width: 100%; border-collapse: collapse; }
+  .table th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; font-family: var(--font-mono); border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .table td { padding: 11px 12px; font-size: 13px; font-weight: 500; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .table tr:last-child td { border-bottom: none; }
+  .table tr:hover td { background: var(--surface2); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">OL</div>
+    <div class="logo-text">Opera<span>Log</span></div>
+  </div>
+  <div class="topbar-center">
+    <div class="pulse"></div>
+    <span>PRODUSLOG · RELATÓRIOS E EXPORTAÇÕES</span>
+  </div>
+  <div class="topbar-right">
+    <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
+    <div class="user-menu" onclick="logout()">
+      <div class="user-avatar" id="user-initials">?</div>
+      <span class="user-name" id="user-name">Usuário</span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">PRINCIPAL</div>
+    <a href="/dashboard.html" class="nav-item"><span class="nav-icon">◈</span> Visão Geral</a>
+    <a href="/operacoes.html" class="nav-item"><span class="nav-icon">⬡</span> Operações IN HOUSE</a>
+    <a href="/transportadoras.html" class="nav-item"><span class="nav-icon">◎</span> Transportadoras</a>
+    <a href="/pdca.html" class="nav-item"><span class="nav-icon">▦</span> Planos PDCA</a>
+    <div class="sidebar-section">GESTÃO</div>
+    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
+    <a href="/relatorios.html" class="nav-item ativo"><span class="nav-icon">◱</span> Relatórios</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Relatórios</div>
+        <div class="page-sub">Exportações e resumos consolidados para reuniões de governança</div>
+      </div>
+    </div>
+
+    <!-- Filtro de período -->
+    <div class="filtro-periodo">
+      <label>Período:</label>
+      <select class="period-select" id="periodo" onchange="atualizarPeriodo()">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30" selected>Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="180">Últimos 6 meses</option>
+      </select>
+      <label>País:</label>
+      <select class="period-select" id="pais-filtro" onchange="atualizarPeriodo()">
+        <option value="">Todos</option>
+        <option value="BR">🇧🇷 Brasil</option>
+        <option value="AR">🇦🇷 Argentina</option>
+        <option value="PT">🇵🇹 Portugal</option>
+      </select>
+    </div>
+
+    <!-- Cards de relatório -->
+    <div class="rel-grid">
+      <div class="rel-card" onclick="gerarRelatorio('executivo')">
+        <div class="rel-icon">📊</div>
+        <div class="rel-titulo">Relatório Executivo</div>
+        <div class="rel-desc">Resumo completo para a diretoria com KPIs, ocorrências críticas, status das operações e score PET.</div>
+        <div class="rel-action">→ Gerar relatório</div>
+      </div>
+      <div class="rel-card" onclick="gerarRelatorio('operacoes')">
+        <div class="rel-icon">⬡</div>
+        <div class="rel-titulo">Relatório de Operações</div>
+        <div class="rel-desc">Visão geral de todas as operações IN HOUSE com status, equipe alocada e performance.</div>
+        <div class="rel-action">→ Gerar relatório</div>
+      </div>
+      <div class="rel-card" onclick="gerarRelatorio('pet')">
+        <div class="rel-icon">🚛</div>
+        <div class="rel-titulo">Relatório PET</div>
+        <div class="rel-desc">Desempenho consolidado de todas as transportadoras — OTD, atraso médio, ocorrências e score.</div>
+        <div class="rel-action">→ Gerar relatório</div>
+      </div>
+      <div class="rel-card" onclick="gerarRelatorio('ocorrencias')">
+        <div class="rel-icon">⚠️</div>
+        <div class="rel-titulo">Relatório de Ocorrências</div>
+        <div class="rel-desc">Listagem completa de ocorrências com tempo médio de resolução e taxa de resolução.</div>
+        <div class="rel-action">→ Gerar relatório</div>
+      </div>
+      <div class="rel-card" onclick="gerarRelatorio('pdca')">
+        <div class="rel-icon">▦</div>
+        <div class="rel-titulo">Relatório de PDCA</div>
+        <div class="rel-desc">Status de todos os planos de ação, taxa de conclusão e planos em atraso.</div>
+        <div class="rel-action">→ Gerar relatório</div>
+      </div>
+    </div>
+
+    <!-- Área de preview do relatório -->
+    <div class="preview-area" id="preview-area">
+      <div class="preview-header">
+        <div class="preview-title" id="preview-titulo">Relatório</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="fecharPreview()">✕ Fechar</button>
+          <button class="btn btn-primary" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button>
+        </div>
+      </div>
+      <div class="preview-body" id="preview-body">
+        <div class="loading">Gerando relatório...</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/shared.js"></script>
+<script>
+let dadosCache = null;
+let tipoAtual = null;
+
+async function carregarDados() {
+  const periodo = document.getElementById('periodo').value;
+  const pais = document.getElementById('pais-filtro').value;
+  const params = new URLSearchParams({ dias: periodo });
+  if (pais) params.append('pais', pais);
+
+  const [dashboard, operacoes, transportadoras, ocorrencias, pdca] = await Promise.all([
+    api('/api/dashboard'),
+    api('/api/operacoes'),
+    api('/api/transportadoras'),
+    api(`/api/ocorrencias?limit=200`),
+    api('/api/pdca')
+  ]);
+
+  dadosCache = { dashboard, operacoes, transportadoras, ocorrencias, pdca };
+  return dadosCache;
+}
+
+async function atualizarPeriodo() {
+  dadosCache = null;
+  if (tipoAtual) gerarRelatorio(tipoAtual);
+}
+
+async function gerarRelatorio(tipo) {
+  tipoAtual = tipo;
+  document.getElementById('preview-area').classList.add('visivel');
+  document.getElementById('preview-body').innerHTML = '<div class="loading">Gerando relatório...</div>';
+  document.getElementById('preview-area').scrollIntoView({ behavior: 'smooth' });
+
+  if (!dadosCache) await carregarDados();
+  const d = dadosCache;
+
+  const titulos = {
+    executivo: '📊 Relatório Executivo',
+    operacoes: '⬡ Relatório de Operações',
+    pet: '🚛 Relatório PET — Transportadoras',
+    ocorrencias: '⚠️ Relatório de Ocorrências',
+    pdca: '▦ Relatório de Planos PDCA'
+  };
+
+  document.getElementById('preview-titulo').textContent = titulos[tipo] || 'Relatório';
+
+  const gerado = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  let html = `<div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:20px">Gerado em ${gerado} · Período: últimos ${document.getElementById('periodo').value} dias</div>`;
+
+  if (tipo === 'executivo') {
+    const k = d.dashboard?.kpis || {};
+    html += `
+      <div class="kpi-mini-grid">
+        <div class="kpi-mini"><div class="kpi-mini-label">Operações Ativas</div><div class="kpi-mini-value" style="color:var(--green)">${k.operacoes_ativas || 0}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Ocorrências Abertas</div><div class="kpi-mini-value" style="color:var(--red)">${k.ocorrencias_abertas || 0}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Colaboradores</div><div class="kpi-mini-value" style="color:var(--blue)">${k.colaboradores_total || 0}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Score Médio PET</div><div class="kpi-mini-value" style="color:var(--amber)">${k.score_medio_transportadoras > 0 ? parseFloat(k.score_medio_transportadoras).toFixed(1) : '—'}</div></div>
+      </div>`;
+
+    html += `<div class="section-title">Operações por País</div>`;
+    const porPais = {};
+    (d.dashboard?.operacoes_por_pais || []).forEach(p => { porPais[p.pais] = p.total; });
+    html += `<div class="kpi-mini-grid">
+      <div class="kpi-mini"><div class="kpi-mini-label">🇧🇷 Brasil</div><div class="kpi-mini-value" style="color:var(--green)">${porPais['BR']||0}</div></div>
+      <div class="kpi-mini"><div class="kpi-mini-label">🇦🇷 Argentina</div><div class="kpi-mini-value" style="color:var(--amber)">${porPais['AR']||0}</div></div>
+      <div class="kpi-mini"><div class="kpi-mini-label">🇵🇹 Portugal</div><div class="kpi-mini-value" style="color:var(--blue)">${porPais['PT']||0}</div></div>
+    </div>`;
+
+    if (d.ocorrencias?.length) {
+      const criticas = d.ocorrencias.filter(o => o.severidade === 'critico' && o.status !== 'resolvida');
+      if (criticas.length) {
+        html += `<div class="section-title">🔴 Ocorrências Críticas em Aberto (${criticas.length})</div>
+        <table class="table"><thead><tr><th>Título</th><th>Operação</th><th>Transportadora</th><th>Registrado</th></tr></thead><tbody>
+        ${criticas.slice(0,10).map(oc => `<tr><td><strong>${oc.titulo}</strong></td><td>${oc.operacao_nome||'—'}</td><td>${oc.transportadora_nome||'—'}</td><td>${tempoAtras(oc.criado_em)}</td></tr>`).join('')}
+        </tbody></table>`;
+      }
+    }
+  }
+
+  else if (tipo === 'operacoes') {
+    const ops = d.operacoes || [];
+    const statusLabel = { ativo:'✅ Ativo', alerta:'⚠️ Alerta', critico:'🔴 Crítico' };
+    const flags = { BR:'🇧🇷', AR:'🇦🇷', PT:'🇵🇹' };
+    html += `
+      <div class="kpi-mini-grid">
+        <div class="kpi-mini"><div class="kpi-mini-label">Total</div><div class="kpi-mini-value" style="color:var(--green)">${ops.length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Ativos</div><div class="kpi-mini-value" style="color:var(--green)">${ops.filter(o=>o.status==='ativo').length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Em Alerta</div><div class="kpi-mini-value" style="color:var(--amber)">${ops.filter(o=>o.status==='alerta').length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Críticos</div><div class="kpi-mini-value" style="color:var(--red)">${ops.filter(o=>o.status==='critico').length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Colaboradores</div><div class="kpi-mini-value" style="color:var(--blue)">${ops.reduce((a,o)=>a+(o.equipe_qtd||0),0)}</div></div>
+      </div>
+      <div class="section-title">Detalhamento por Operação</div>
+      <table class="table"><thead><tr><th>Cliente</th><th>Local</th><th>País</th><th>Equipe</th><th>Serviços</th><th>Status</th></tr></thead><tbody>
+      ${ops.map(op => `<tr>
+        <td><strong>${op.cliente}</strong></td>
+        <td>${op.local}</td>
+        <td>${flags[op.pais]||op.pais}</td>
+        <td>${op.equipe_qtd}</td>
+        <td style="font-size:11px;color:var(--text-muted)">${(op.servicos||[]).join(', ')||'—'}</td>
+        <td>${statusLabel[op.status]||op.status}</td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  else if (tipo === 'pet') {
+    const ts = d.transportadoras || [];
+    html += `
+      <div class="kpi-mini-grid">
+        <div class="kpi-mini"><div class="kpi-mini-label">Transportadoras</div><div class="kpi-mini-value" style="color:var(--green)">${ts.length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Score ≥ 8</div><div class="kpi-mini-value" style="color:var(--green)">${ts.filter(t=>t.score>=8).length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Score 6–8</div><div class="kpi-mini-value" style="color:var(--amber)">${ts.filter(t=>t.score>=6&&t.score<8).length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Score &lt; 6</div><div class="kpi-mini-value" style="color:var(--red)">${ts.filter(t=>t.score>0&&t.score<6).length}</div></div>
+      </div>
+      <div class="section-title">Score por Transportadora</div>
+      <table class="table"><thead><tr><th>Transportadora</th><th>País</th><th>Score</th><th>OTD</th><th>Atraso Médio</th><th>Oc/1000</th></tr></thead><tbody>
+      ${ts.sort((a,b)=>b.score-a.score).map(t => {
+        const u = t.historico_pet?.[0];
+        const cor = scoreColor(t.score);
+        return `<tr>
+          <td><strong>${t.nome}</strong> ${t.sigla?`<span style="color:var(--text-muted);font-size:11px">(${t.sigla})</span>`:''}</td>
+          <td>${{BR:'🇧🇷',AR:'🇦🇷',PT:'🇵🇹'}[t.pais]||t.pais}</td>
+          <td><strong style="color:${cor}">${t.score>0?parseFloat(t.score).toFixed(1):'—'}</strong></td>
+          <td>${u?parseFloat(u.otd).toFixed(1)+'%':'—'}</td>
+          <td>${u?parseFloat(u.atraso_medio).toFixed(1)+'h':'—'}</td>
+          <td>${u?parseFloat(u.ocorrencias_mil).toFixed(1):'—'}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+
+  else if (tipo === 'ocorrencias') {
+    const ocs = d.ocorrencias || [];
+    const abertas = ocs.filter(o=>o.status!=='resolvida').length;
+    const resolvidas = ocs.filter(o=>o.status==='resolvida').length;
+    const criticas = ocs.filter(o=>o.severidade==='critico').length;
+    html += `
+      <div class="kpi-mini-grid">
+        <div class="kpi-mini"><div class="kpi-mini-label">Total</div><div class="kpi-mini-value" style="color:var(--text)">${ocs.length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Abertas</div><div class="kpi-mini-value" style="color:var(--red)">${abertas}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Resolvidas</div><div class="kpi-mini-value" style="color:var(--green)">${resolvidas}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Críticas</div><div class="kpi-mini-value" style="color:var(--red)">${criticas}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Taxa Resolução</div><div class="kpi-mini-value" style="color:var(--green)">${ocs.length?Math.round(resolvidas/ocs.length*100):0}%</div></div>
+      </div>
+      <div class="section-title">Listagem de Ocorrências</div>
+      <table class="table"><thead><tr><th>Título</th><th>Severidade</th><th>Status</th><th>Operação</th><th>Registrado</th></tr></thead><tbody>
+      ${ocs.slice(0,50).map(oc => `<tr>
+        <td><strong>${oc.titulo}</strong></td>
+        <td><span style="color:${{critico:'var(--red)',alerta:'var(--amber)',positivo:'var(--green)',informativo:'var(--blue)'}[oc.severidade]||'var(--text)'}">${oc.severidade.toUpperCase()}</span></td>
+        <td>${{aberta:'🔓 Aberta',em_andamento:'⚙️ Em andamento',resolvida:'✅ Resolvida'}[oc.status]||oc.status}</td>
+        <td>${oc.operacao_nome||oc.transportadora_nome||'—'}</td>
+        <td>${tempoAtras(oc.criado_em)}</td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  else if (tipo === 'pdca') {
+    const board = d.pdca?.board || {};
+    const todos = [...(board.plan||[]), ...(board.do||[]), ...(board.check||[]), ...(board.act||[])];
+    const concluidos = d.pdca?.concluidos || [];
+    html += `
+      <div class="kpi-mini-grid">
+        <div class="kpi-mini"><div class="kpi-mini-label">Em Andamento</div><div class="kpi-mini-value" style="color:var(--blue)">${todos.length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Plan</div><div class="kpi-mini-value" style="color:var(--blue)">${(board.plan||[]).length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Do</div><div class="kpi-mini-value" style="color:var(--amber)">${(board.do||[]).length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Check</div><div class="kpi-mini-value" style="color:var(--green)">${(board.check||[]).length}</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-label">Act</div><div class="kpi-mini-value" style="color:var(--purple)">${(board.act||[]).length}</div></div>
+      </div>
+      <div class="section-title">Planos em Andamento</div>
+      <table class="table"><thead><tr><th>Título</th><th>Etapa</th><th>Responsável</th><th>Prazo</th><th>Meta</th></tr></thead><tbody>
+      ${todos.map(p => {
+        const diff = p.prazo ? Math.floor((new Date(p.prazo)-new Date())/86400000) : null;
+        const prazoStr = diff === null ? '—' : diff < 0 ? `<span style="color:var(--red)">⚠️ Atrasado ${Math.abs(diff)}d</span>` : diff <= 7 ? `<span style="color:var(--amber)">⚡ ${diff}d</span>` : formatDate(p.prazo);
+        const etapaCor = {plan:'var(--blue)',do:'var(--amber)',check:'var(--green)',act:'var(--purple)'}[p.etapa]||'var(--text)';
+        return `<tr>
+          <td><strong>${p.titulo}</strong></td>
+          <td><strong style="color:${etapaCor}">${p.etapa?.toUpperCase()}</strong></td>
+          <td>${p.responsavel||'—'}</td>
+          <td>${prazoStr}</td>
+          <td style="font-size:11px;color:var(--text-muted)">${p.meta?p.meta.substring(0,50)+(p.meta.length>50?'...':''):'—'}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+
+  document.getElementById('preview-body').innerHTML = html;
+}
+
+function fecharPreview() {
+  document.getElementById('preview-area').classList.remove('visivel');
+  tipoAtual = null;
+}
+
+function imprimirRelatorio() {
+  window.print();
+}
+</script>
+</body>
+</html>
