@@ -1,543 +1,115 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OperaLog — Transportadoras</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
-<style>
-  .transp-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
+const express = require('express');
+const router = express.Router();
+const db = require('../database/db');
+const auth = require('./middleware');
+
+// GET /api/transportadoras
+router.get('/', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT t.*,
+        (SELECT COUNT(*) FROM ocorrencias o WHERE o.transportadora_id = t.id AND o.status != 'resolvida') as ocorrencias_abertas,
+        (SELECT json_agg(p ORDER BY p.criado_em DESC) FROM (
+          SELECT * FROM pet_registros WHERE transportadora_id = t.id ORDER BY criado_em DESC LIMIT 3
+        ) p) as historico_pet
+      FROM transportadoras t
+      WHERE t.ativa = true
+      ORDER BY t.score DESC NULLS LAST, t.nome ASC
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .transp-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden;
-    transition: all 0.2s; cursor: pointer;
-    animation: fadeUp 0.3s ease both;
+// GET /api/transportadoras/:id
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT * FROM transportadoras WHERE id = $1',
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ erro: 'Transportadora não encontrada' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .transp-card:hover {
-    border-color: rgba(255,255,255,0.15);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+// POST /api/transportadoras
+router.post('/', auth, async (req, res) => {
+  const { nome, sigla, pais, regiao, contato, email } = req.body;
+  if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório' });
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO transportadoras (nome, sigla, pais, regiao, contato, email)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [nome, sigla || null, pais || 'BR', regiao || null, contato || null, email || null]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .transp-header {
-    padding: 16px 18px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
+// PUT /api/transportadoras/:id
+router.put('/:id', auth, async (req, res) => {
+  const { nome, sigla, pais, regiao, contato, email } = req.body;
+  try {
+    const { rows } = await db.query(
+      `UPDATE transportadoras SET
+        nome = COALESCE($1, nome),
+        sigla = $2,
+        pais = COALESCE($3, pais),
+        regiao = $4,
+        contato = $5,
+        email = $6
+       WHERE id = $7 RETURNING *`,
+      [nome, sigla, pais, regiao, contato, email, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ erro: 'Transportadora não encontrada' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .transp-nome {
-    font-family: var(--font-display);
-    font-size: 15px; font-weight: 800; color: var(--text);
-    margin-bottom: 3px;
+// DELETE /api/transportadoras/:id
+router.delete('/:id', auth, async (req, res) => {
+  if (req.usuario.perfil !== 'admin') return res.status(403).json({ erro: 'Acesso negado' });
+  try {
+    const { rows } = await db.query(
+      'UPDATE transportadoras SET ativa = false WHERE id = $1 RETURNING id',
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ erro: 'Transportadora não encontrada' });
+    res.json({ mensagem: 'Transportadora removida com sucesso' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .transp-regiao {
-    font-size: 11px; font-weight: 600;
-    color: var(--text-muted); font-family: var(--font-mono);
+// POST /api/transportadoras/:id/pet
+router.post('/:id/pet', auth, async (req, res) => {
+  const { periodo_inicio, periodo_fim, otd, atraso_medio, ocorrencias_mil, satisfacao, total_viagens, notas } = req.body;
+  if (!periodo_inicio || !periodo_fim) return res.status(400).json({ erro: 'Período é obrigatório' });
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO pet_registros (transportadora_id, periodo_inicio, periodo_fim, otd, atraso_medio, ocorrencias_mil, satisfacao, total_viagens, notas, registrado_por)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [req.params.id, periodo_inicio, periodo_fim, otd, atraso_medio, ocorrencias_mil, satisfacao, total_viagens || 0, notas || null, req.usuario.id]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno' });
   }
+});
 
-  .score-circle {
-    width: 52px; height: 52px; border-radius: 50%;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    border: 2px solid; position: relative;
-  }
-
-  .score-num {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800; line-height: 1;
-  }
-
-  .score-txt {
-    font-size: 9px; font-weight: 700;
-    font-family: var(--font-mono); opacity: 0.8;
-  }
-
-  .transp-body { padding: 14px 18px; }
-
-  .pet-grid {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 8px; margin-bottom: 12px;
-  }
-
-  .pet-item {
-    background: var(--surface2);
-    border-radius: 8px; padding: 8px 10px;
-    text-align: center;
-  }
-
-  .pet-label {
-    font-size: 9px; font-weight: 700; color: var(--text);
-    text-transform: uppercase; letter-spacing: 1px;
-    font-family: var(--font-mono); margin-bottom: 4px;
-    display: block;
-  }
-
-  .pet-value {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800;
-  }
-
-  .pet-meta {
-    font-size: 9px; color: var(--text-muted);
-    font-family: var(--font-mono); font-weight: 500;
-  }
-
-  .transp-actions {
-    display: flex; gap: 8px;
-    padding-top: 10px; border-top: 1px solid var(--border);
-  }
-
-  .btn-sm {
-    flex: 1; padding: 7px 10px; border-radius: 6px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
-
-  .btn-sm:hover { border-color: var(--green); color: var(--green); }
-  .btn-sm.green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-
-  /* Painel PET */
-  .pet-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; padding: 24px;
-    margin-bottom: 20px; display: none;
-    animation: fadeUp 0.2s ease;
-  }
-
-  .pet-panel.aberto { display: block; }
-
-  .pet-title {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800; color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .pet-sub {
-    font-size: 12px; font-weight: 600;
-    color: var(--text-muted); margin-bottom: 20px;
-    font-family: var(--font-mono);
-  }
-
-  .pet-form-grid {
-    display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .meta-info {
-    display: flex; gap: 8px; align-items: center;
-    padding: 8px 12px; border-radius: 6px;
-    background: var(--surface2); font-size: 11px;
-    font-weight: 600; color: var(--text-muted);
-    font-family: var(--font-mono); margin-bottom: 12px;
-  }
-
-  .meta-info span { color: var(--green); font-weight: 700; }
-
-  /* Filtros */
-  .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-
-  .filtro-btn {
-    padding: 7px 16px; border-radius: 20px;
-    font-size: 13px; font-weight: 700;
-    cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
-
-  .filtro-btn.ativo { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .filtro-btn:hover { border-color: var(--green); }
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div class="logo">
-    <div class="logo-icon">OL</div>
-    <div class="logo-text">Opera<span>Log</span></div>
-  </div>
-  <div class="topbar-center">
-    <div class="pulse"></div>
-    <span>PRODUSLOG · PROGRAMA DE EXCELÊNCIA EM TRANSPORTES</span>
-  </div>
-  <div class="topbar-right">
-    <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
-    <div class="user-menu" onclick="logout()">
-      <div class="user-avatar" id="user-initials">?</div>
-      <span class="user-name" id="user-name">Usuário</span>
-    </div>
-  </div>
-</div>
-
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-section">PRINCIPAL</div>
-    <a href="/dashboard.html" class="nav-item"><span class="nav-icon">◈</span> Visão Geral</a>
-    <a href="/operacoes.html" class="nav-item"><span class="nav-icon">⬡</span> Operações IN HOUSE</a>
-    <a href="/transportadoras.html" class="nav-item ativo"><span class="nav-icon">◎</span> Transportadoras</a>
-    <a href="/pdca.html" class="nav-item"><span class="nav-icon">▦</span> Planos PDCA</a>
-    <div class="sidebar-section">GESTÃO</div>
-    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
-    <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
-  </aside>
-
-  <main class="main">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Transportadoras — PET</div>
-        <div class="page-sub">Programa de Excelência em Transportes — Score automático por OTD, atraso médio e ocorrências</div>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-ghost" onclick="togglePetPanel()">📊 Registrar PET</button>
-        <button class="btn btn-primary" onclick="abrirModalTransp()">+ Nova Transportadora</button>
-      </div>
-    </div>
-
-    <!-- Painel registro PET -->
-    <div class="pet-panel" id="pet-panel">
-      <div class="pet-title">📊 Registrar Avaliação PET</div>
-      <div class="pet-sub">O score é calculado automaticamente pelo sistema com base nos indicadores abaixo</div>
-
-      <div class="form-row" style="margin-bottom:12px">
-        <div class="form-group">
-          <label class="form-label">Transportadora *</label>
-          <select class="form-select" id="pet-transp">
-            <option value="">Selecione...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Total de Viagens</label>
-          <input class="form-input" type="number" id="pet-viagens" placeholder="Ex: 500" min="1">
-        </div>
-      </div>
-
-      <div class="form-row" style="margin-bottom:12px">
-        <div class="form-group">
-          <label class="form-label">Período Início *</label>
-          <input class="form-input" type="date" id="pet-inicio">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Período Fim *</label>
-          <input class="form-input" type="date" id="pet-fim">
-        </div>
-      </div>
-
-      <div class="pet-form-grid">
-        <div class="form-group">
-          <label class="form-label">OTD % <span style="color:var(--green);font-size:10px">meta ≥95%</span></label>
-          <input class="form-input" type="number" id="pet-otd" placeholder="95.0" min="0" max="100" step="0.1" oninput="calcularPreview()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Atraso Médio (h) <span style="color:var(--amber);font-size:10px">meta ≤2h</span></label>
-          <input class="form-input" type="number" id="pet-atraso" placeholder="2.0" min="0" step="0.1" oninput="calcularPreview()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Oc/1000 viagens <span style="color:var(--red);font-size:10px">meta ≤5</span></label>
-          <input class="form-input" type="number" id="pet-oc" placeholder="5.0" min="0" step="0.1" oninput="calcularPreview()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Satisfação (0-10)</label>
-          <input class="form-input" type="number" id="pet-sat" placeholder="8.0" min="0" max="10" step="0.1" oninput="calcularPreview()">
-        </div>
-        <div class="form-group" style="grid-column:span 2">
-          <label class="form-label">Preview do Score</label>
-          <div id="score-preview" style="
-            padding:11px 14px; border-radius:8px;
-            background:var(--surface2); border:1px solid var(--border);
-            font-family:var(--font-display); font-size:20px; font-weight:800;
-            color:var(--text-muted); text-align:center;
-          ">— / 10</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Notas</label>
-        <textarea class="form-textarea" id="pet-notas" placeholder="Observações sobre o período avaliado..."></textarea>
-      </div>
-
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="togglePetPanel()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarPet()">💾 Salvar Avaliação PET</button>
-      </div>
-    </div>
-
-    <!-- Filtros -->
-    <div class="filtros">
-      <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
-      <button class="filtro-btn" onclick="filtrar('BR',this)">🇧🇷 Brasil</button>
-      <button class="filtro-btn" onclick="filtrar('AR',this)">🇦🇷 Argentina</button>
-      <button class="filtro-btn" onclick="filtrar('PT',this)">🇵🇹 Portugal</button>
-      <button class="filtro-btn" onclick="filtrar('ok',this)">✅ Score ≥ 8</button>
-      <button class="filtro-btn" onclick="filtrar('alerta',this)">⚠️ Score 6–8</button>
-      <button class="filtro-btn" onclick="filtrar('critico',this)">🔴 Score &lt; 6</button>
-    </div>
-
-    <div class="transp-grid" id="transp-grid">
-      <div class="loading">Carregando transportadoras...</div>
-    </div>
-  </main>
-</div>
-
-<!-- Modal Transportadora -->
-<div class="modal-overlay" id="modal-transp">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-titulo">Nova Transportadora</div>
-      <button class="modal-close" onclick="fecharModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="transp-id">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Nome *</label>
-          <input class="form-input" id="transp-nome" placeholder="Ex: JSL Logística">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Sigla</label>
-          <input class="form-input" id="transp-sigla" placeholder="Ex: JSL">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">País *</label>
-          <select class="form-select" id="transp-pais">
-            <option value="BR">🇧🇷 Brasil</option>
-            <option value="AR">🇦🇷 Argentina</option>
-            <option value="PT">🇵🇹 Portugal</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Região</label>
-          <input class="form-input" id="transp-regiao" placeholder="Ex: SP Interior">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Contato</label>
-          <input class="form-input" id="transp-contato" placeholder="Nome do contato">
-        </div>
-        <div class="form-group">
-          <label class="form-label">E-mail</label>
-          <input class="form-input" type="email" id="transp-email" placeholder="contato@empresa.com">
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarTransp()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<script src="/shared.js"></script>
-<script>
-let todasTransp = [];
-let filtroAtual = 'todos';
-const FLAGS = { BR:'🇧🇷', AR:'🇦🇷', PT:'🇵🇹' };
-
-async function carregarTransp() {
-  todasTransp = await api('/api/transportadoras') || [];
-  popularSelectPet();
-  renderTransp();
-}
-
-function popularSelectPet() {
-  const sel = document.getElementById('pet-transp');
-  sel.innerHTML = '<option value="">Selecione...</option>';
-  todasTransp.forEach(t => {
-    sel.innerHTML += `<option value="${t.id}">${t.nome} ${FLAGS[t.pais]||''}</option>`;
-  });
-}
-
-function filtrar(tipo, btn) {
-  filtroAtual = tipo;
-  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
-  btn.classList.add('ativo');
-  renderTransp();
-}
-
-function renderTransp() {
-  let ts = todasTransp;
-  if (['BR','AR','PT'].includes(filtroAtual)) ts = ts.filter(t => t.pais === filtroAtual);
-  else if (filtroAtual === 'ok') ts = ts.filter(t => t.score >= 8);
-  else if (filtroAtual === 'alerta') ts = ts.filter(t => t.score >= 6 && t.score < 8);
-  else if (filtroAtual === 'critico') ts = ts.filter(t => t.score < 6 && t.score > 0);
-
-  const grid = document.getElementById('transp-grid');
-
-  if (!ts.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted);font-weight:600">
-      <div style="font-size:40px;margin-bottom:12px">🚛</div>
-      <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">Nenhuma transportadora encontrada</div>
-      <div>Clique em "+ Nova Transportadora" para adicionar</div>
-    </div>`;
-    return;
-  }
-
-  grid.innerHTML = ts.map(t => {
-    const sc = parseFloat(t.score) || 0;
-    const cor = scoreColor(sc);
-    const ultimo = t.historico_pet?.[0];
-
-    return `
-    <div class="transp-card">
-      <div class="transp-header">
-        <div>
-          <div class="transp-nome">${t.nome} ${t.sigla ? `<span style="color:var(--text-muted);font-size:12px">(${t.sigla})</span>` : ''}</div>
-          <div class="transp-regiao">${FLAGS[t.pais]||''} ${t.regiao || t.pais} ${t.ocorrencias_abertas > 0 ? `· <span style="color:var(--red)">⚠️ ${t.ocorrencias_abertas} oc.</span>` : ''}</div>
-        </div>
-        <div class="score-circle" style="border-color:${cor};background:${cor}18">
-          <div class="score-num" style="color:${cor}">${sc > 0 ? sc.toFixed(1) : '—'}</div>
-          <div class="score-txt" style="color:${cor}">${sc > 0 ? scoreLabel(sc).toUpperCase() : 'SEM PET'}</div>
-        </div>
-      </div>
-      <div class="transp-body">
-        ${ultimo ? `
-        <div class="pet-grid">
-          <div class="pet-item">
-            <span class="pet-label">OTD</span>
-            <div class="pet-value" style="color:${parseFloat(ultimo.otd)>=95?'var(--green)':'var(--red)'}">${parseFloat(ultimo.otd).toFixed(1)}%</div>
-            <div class="pet-meta">meta ≥95%</div>
-          </div>
-          <div class="pet-item">
-            <span class="pet-label">Atraso</span>
-            <div class="pet-value" style="color:${parseFloat(ultimo.atraso_medio)<=2?'var(--green)':'var(--red)'}">${parseFloat(ultimo.atraso_medio).toFixed(1)}h</div>
-            <div class="pet-meta">meta ≤2h</div>
-          </div>
-          <div class="pet-item">
-            <span class="pet-label">Oc/1k</span>
-            <div class="pet-value" style="color:${parseFloat(ultimo.ocorrencias_mil)<=5?'var(--green)':'var(--red)'}">${parseFloat(ultimo.ocorrencias_mil).toFixed(1)}</div>
-            <div class="pet-meta">meta ≤5</div>
-          </div>
-        </div>` : `
-        <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;font-weight:600">
-          Sem avaliação PET registrada
-        </div>`}
-        <div class="transp-actions">
-          <button class="btn-sm" onclick="registrarPetParaTransp('${t.id}', '${t.nome}')">📊 PET</button>
-          <button class="btn-sm" onclick="window.location='/ocorrencias.html?transp=${t.id}'">⚠️ Oc.</button>
-          <button class="btn-sm" onclick="editarTransp(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏️</button>
-          ${usuario.perfil === 'admin' ? `<button class="btn-sm" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,77,106,0.3)" onclick="excluirTransp('${t.id}','${t.nome}')">🗑️</button>` : ''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function togglePetPanel() {
-  document.getElementById('pet-panel').classList.toggle('aberto');
-}
-
-function registrarPetParaTransp(id, nome) {
-  document.getElementById('pet-transp').value = id;
-  document.getElementById('pet-panel').classList.add('aberto');
-  document.getElementById('pet-panel').scrollIntoView({ behavior: 'smooth' });
-}
-
-function calcularPreview() {
-  const otd = parseFloat(document.getElementById('pet-otd').value) || 0;
-  const atraso = parseFloat(document.getElementById('pet-atraso').value) || 0;
-  const oc = parseFloat(document.getElementById('pet-oc').value) || 0;
-  const sat = parseFloat(document.getElementById('pet-sat').value) || 0;
-
-  if (!otd) { document.getElementById('score-preview').textContent = '— / 10'; return; }
-
-  const scoreOtd = Math.min(10, (otd / 95) * 10) * 0.4;
-  let scoreAtraso = 0;
-  if (atraso <= 2) scoreAtraso = 10 * 0.3;
-  else if (atraso <= 4) scoreAtraso = (1 - ((atraso - 2) / 8)) * 10 * 0.3;
-
-  const scoreOc = oc <= 5 ? 10 * 0.2 : Math.max(0, (1 - ((oc - 5) / 15)) * 10) * 0.2;
-  const scoreSat = (sat / 10) * 10 * 0.1;
-  const total = Math.round((scoreOtd + scoreAtraso + scoreOc + scoreSat) * 10) / 10;
-
-  const cor = scoreColor(total);
-  const el = document.getElementById('score-preview');
-  el.style.color = cor;
-  el.style.borderColor = cor;
-  el.textContent = `${total.toFixed(1)} / 10 — ${scoreLabel(total)}`;
-}
-
-async function salvarPet() {
-  const body = {
-    periodo_inicio: document.getElementById('pet-inicio').value,
-    periodo_fim: document.getElementById('pet-fim').value,
-    otd: parseFloat(document.getElementById('pet-otd').value) || 0,
-    atraso_medio: parseFloat(document.getElementById('pet-atraso').value) || 0,
-    ocorrencias_mil: parseFloat(document.getElementById('pet-oc').value) || 0,
-    satisfacao: parseFloat(document.getElementById('pet-sat').value) || 0,
-    total_viagens: parseInt(document.getElementById('pet-viagens').value) || 0,
-    notas: document.getElementById('pet-notas').value
-  };
-
-  const transpId = document.getElementById('pet-transp').value;
-  if (!transpId || !body.periodo_inicio || !body.periodo_fim) {
-    alert('Transportadora e período são obrigatórios'); return;
-  }
-
-  const res = await apiPost(`/api/transportadoras/${transpId}/pet`, body);
-  if (res) {
-    toast('Avaliação PET salva com sucesso!', 'success');
-    togglePetPanel();
-    carregarTransp();
-  }
-}
-
-function abrirModalTransp(t = null) {
-  document.getElementById('transp-id').value = t?.id || '';
-  document.getElementById('transp-nome').value = t?.nome || '';
-  document.getElementById('transp-sigla').value = t?.sigla || '';
-  document.getElementById('transp-pais').value = t?.pais || 'BR';
-  document.getElementById('transp-regiao').value = t?.regiao || '';
-  document.getElementById('transp-contato').value = t?.contato || '';
-  document.getElementById('transp-email').value = t?.email || '';
-  document.getElementById('modal-titulo').textContent = t ? 'Editar Transportadora' : 'Nova Transportadora';
-  document.getElementById('modal-transp').classList.add('aberto');
-}
-
-function editarTransp(t) { abrirModalTransp(t); }
-function fecharModal() { document.getElementById('modal-transp').classList.remove('aberto'); }
-
-async function excluirTransp(id, nome) {
-  if (!confirm(`⚠️ Tem certeza que deseja desativar a transportadora "${nome}"?\n\nEssa ação irá arquivar o registro. O histórico PET será preservado.`)) return;
-  const res = await apiPost(`/api/transportadoras/${id}`, { ativa: false }, 'PUT');
-  if (res) {
-    toast(`Transportadora "${nome}" desativada com sucesso.`, 'success');
-    carregarTransp();
-  }
-}
-
-async function salvarTransp() {
-  const id = document.getElementById('transp-id').value;
-  const body = {
-    nome: document.getElementById('transp-nome').value.trim(),
-    sigla: document.getElementById('transp-sigla').value.trim(),
-    pais: document.getElementById('transp-pais').value,
-    regiao: document.getElementById('transp-regiao').value.trim(),
-    contato: document.getElementById('transp-contato').value.trim(),
-    email: document.getElementById('transp-email').value.trim()
-  };
-
-  if (!body.nome) { alert('Nome é obrigatório'); return; }
-
-  const url = id ? `/api/transportadoras/${id}` : '/api/transportadoras';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiPost(url, body, method);
-  if (res) { fecharModal(); carregarTransp(); toast('Transportadora salva!', 'success'); }
-}
-
-carregarTransp();
-</script>
-</body>
-</html>
+module.exports = router;
