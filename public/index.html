@@ -11,7 +11,6 @@
     --surface: #0D1420;
     --green: #00C88C;
     --green-dim: rgba(0,200,140,0.15);
-    --amber: #F5C842;
     --text: #FFFFFF;
     --text-muted: #A0AEC0;
     --border: rgba(255,255,255,0.08);
@@ -172,19 +171,28 @@
     transform: none;
   }
 
-  .error-msg {
-    background: rgba(255,77,106,0.1);
-    border: 1px solid rgba(255,77,106,0.3);
+  .msg-box {
     border-radius: 8px;
     padding: 10px 14px;
-    color: #FF4D6A;
     font-size: 13px;
     font-weight: 600;
     margin-top: 12px;
     display: none;
   }
 
-  /* Seletor de idioma */
+  .msg-error {
+    background: rgba(255,77,106,0.1);
+    border: 1px solid rgba(255,77,106,0.3);
+    color: #FF4D6A;
+  }
+
+  .msg-warning {
+    background: rgba(245,200,66,0.1);
+    border: 1px solid rgba(245,200,66,0.3);
+    color: #F5C842;
+    display: block;
+  }
+
   .idioma-sel {
     display: flex;
     gap: 8px;
@@ -228,11 +236,15 @@
     <div class="logo-text">Opera<span>Log</span></div>
   </div>
 
-  <!-- Seletor de idioma -->
   <div class="idioma-sel">
     <button class="idioma-btn ativo" onclick="setIdioma('pt-BR', this)">🇧🇷 PT-BR</button>
     <button class="idioma-btn" onclick="setIdioma('pt-PT', this)">🇵🇹 PT-PT</button>
     <button class="idioma-btn" onclick="setIdioma('es', this)">🇪🇸 ES</button>
+  </div>
+
+  <!-- Aviso de sessão expirada -->
+  <div class="msg-box msg-warning" id="aviso-sessao" style="display:none;margin-bottom:16px">
+    ⏱️ Sua sessão expirou. Faça login novamente.
   </div>
 
   <div class="login-title" id="titulo">Bem-vindo</div>
@@ -249,40 +261,16 @@
   </div>
 
   <button class="btn-login" id="btn-entrar" onclick="login()">Entrar</button>
-  <div class="error-msg" id="erro"></div>
+  <div class="msg-box msg-error" id="erro"></div>
 
   <div class="footer-login">OperaLog v1.0 · 2025 · Produslog</div>
 </div>
 
 <script>
   const TEXTOS = {
-    'pt-BR': {
-      titulo: 'Bem-vindo',
-      subtitulo: 'Acesse sua conta para continuar',
-      labelEmail: 'E-mail',
-      labelSenha: 'Senha',
-      btnEntrar: 'Entrar',
-      erroCredenciais: 'E-mail ou senha incorretos',
-      erroServidor: 'Erro de conexão. Tente novamente.'
-    },
-    'pt-PT': {
-      titulo: 'Bem-vindo',
-      subtitulo: 'Aceda à sua conta para continuar',
-      labelEmail: 'E-mail',
-      labelSenha: 'Palavra-passe',
-      btnEntrar: 'Entrar',
-      erroCredenciais: 'E-mail ou palavra-passe incorretos',
-      erroServidor: 'Erro de ligação. Tente novamente.'
-    },
-    'es': {
-      titulo: 'Bienvenido',
-      subtitulo: 'Acceda a su cuenta para continuar',
-      labelEmail: 'Correo electrónico',
-      labelSenha: 'Contraseña',
-      btnEntrar: 'Iniciar sesión',
-      erroCredenciais: 'Correo o contraseña incorrectos',
-      erroServidor: 'Error de conexión. Inténtelo de nuevo.'
-    }
+    'pt-BR': { titulo:'Bem-vindo', subtitulo:'Acesse sua conta para continuar', labelEmail:'E-mail', labelSenha:'Senha', btnEntrar:'Entrar', erroCredenciais:'E-mail ou senha incorretos', erroServidor:'Erro de conexão. Tente novamente.', sessaoExpirada:'⏱️ Sua sessão expirou. Faça login novamente.' },
+    'pt-PT': { titulo:'Bem-vindo', subtitulo:'Aceda à sua conta para continuar', labelEmail:'E-mail', labelSenha:'Palavra-passe', btnEntrar:'Entrar', erroCredenciais:'E-mail ou palavra-passe incorretos', erroServidor:'Erro de ligação. Tente novamente.', sessaoExpirada:'⏱️ A sua sessão expirou. Inicie sessão novamente.' },
+    'es': { titulo:'Bienvenido', subtitulo:'Acceda a su cuenta para continuar', labelEmail:'Correo electrónico', labelSenha:'Contraseña', btnEntrar:'Iniciar sesión', erroCredenciais:'Correo o contraseña incorrectos', erroServidor:'Error de conexión. Inténtelo de nuevo.', sessaoExpirada:'⏱️ Su sesión expiró. Inicie sesión nuevamente.' }
   };
 
   let idiomaAtual = 'pt-BR';
@@ -332,12 +320,10 @@
         return;
       }
 
-      // Salvar token e idioma
       localStorage.setItem('operalog_token', data.token);
       localStorage.setItem('operalog_usuario', JSON.stringify(data.usuario));
       localStorage.setItem('operalog_idioma', idiomaAtual);
-
-      // Redirecionar para dashboard
+      sessionStorage.removeItem('operalog_sessao_expirada');
       window.location.href = '/dashboard.html';
 
     } catch (err) {
@@ -348,19 +334,21 @@
     }
   }
 
-  // Enter para logar
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') login();
-  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-  // Restaurar idioma salvo
   const idiomasSalvo = localStorage.getItem('operalog_idioma');
   if (idiomasSalvo && idiomasSalvo !== 'pt-BR') {
     const btn = document.querySelector(`[onclick*="${idiomasSalvo}"]`);
     if (btn) setIdioma(idiomasSalvo, btn);
   }
 
-  // Se já logado, redirecionar
+  // Mostrar aviso de sessão expirada
+  if (sessionStorage.getItem('operalog_sessao_expirada')) {
+    const aviso = document.getElementById('aviso-sessao');
+    aviso.style.display = 'block';
+    aviso.textContent = TEXTOS[idiomaAtual].sessaoExpirada;
+  }
+
   if (localStorage.getItem('operalog_token')) {
     window.location.href = '/dashboard.html';
   }
