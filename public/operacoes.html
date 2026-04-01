@@ -7,9 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/shared.css">
 <style>
-  .filtros {
-    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
-  }
+  .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 
   .filtro-btn {
     padding: 7px 16px; border-radius: 20px;
@@ -50,52 +48,34 @@
     color: var(--text); margin-bottom: 3px;
   }
 
-  .op-local {
-    font-size: 12px; font-weight: 600;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-  }
+  .op-local { font-size: 12px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
 
   .op-body { padding: 14px 18px; }
 
-  .op-stats {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; margin-bottom: 12px;
-  }
+  .op-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 
-  .op-stat {
-    background: var(--surface2);
-    border-radius: 8px; padding: 10px 12px;
-  }
+  .op-stat { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
 
   .op-stat-label {
-    font-size: 10px; font-weight: 700;
-    color: var(--text); /* BRANCO BOLD */
+    font-size: 10px; font-weight: 700; color: var(--text);
     text-transform: uppercase; letter-spacing: 1px;
     font-family: var(--font-mono); margin-bottom: 4px;
   }
 
-  .op-stat-value {
-    font-family: var(--font-display);
-    font-size: 20px; font-weight: 800; color: var(--text);
-  }
+  .op-stat-value { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text); }
 
-  .op-servicos {
-    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
-  }
+  .op-servicos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 
   .servico-tag {
     padding: 3px 10px; border-radius: 4px;
     font-size: 11px; font-weight: 700;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text); /* BRANCO BOLD */
-    font-family: var(--font-mono);
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono);
   }
 
   .op-actions {
     display: flex; gap: 8px; padding-top: 10px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border); flex-wrap: wrap;
   }
 
   .btn-sm {
@@ -117,7 +97,8 @@
     border: 1px solid rgba(255,77,106,0.3);
   }
 
-  /* Modal */
+  .btn-sm-danger:hover { background: rgba(255,77,106,0.25); }
+
   .modal-overlay {
     position: fixed; inset: 0; z-index: 200;
     background: rgba(0,0,0,0.7);
@@ -141,10 +122,7 @@
     display: flex; justify-content: space-between; align-items: center;
   }
 
-  .modal-title {
-    font-family: var(--font-display);
-    font-size: 18px; font-weight: 800; color: var(--text);
-  }
+  .modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); }
 
   .modal-close {
     width: 32px; height: 32px; border-radius: 8px;
@@ -157,10 +135,7 @@
 
   .form-group { margin-bottom: 16px; }
 
-  .form-label {
-    display: block; font-size: 13px; font-weight: 700;
-    color: var(--text); margin-bottom: 8px;
-  }
+  .form-label { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 
   .form-input, .form-select, .form-textarea {
     width: 100%; padding: 11px 14px;
@@ -176,7 +151,6 @@
 
   .form-select option { background: var(--surface); color: var(--text); }
   .form-textarea { resize: vertical; min-height: 80px; }
-
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
   .modal-footer {
@@ -185,11 +159,7 @@
     display: flex; gap: 10px; justify-content: flex-end;
   }
 
-  .empty-state {
-    text-align: center; padding: 60px 20px;
-    color: var(--text-muted); grid-column: 1/-1;
-  }
-
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); grid-column: 1/-1; }
   .empty-icon { font-size: 48px; margin-bottom: 12px; }
   .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
   .empty-sub { font-size: 14px; font-weight: 500; }
@@ -197,7 +167,6 @@
 </head>
 <body>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <div class="logo">
     <div class="logo-icon">OL</div>
@@ -205,7 +174,7 @@
   </div>
   <div class="topbar-center">
     <div class="pulse"></div>
-    <span id="empresa-label">PRODUSLOG · OPERAÇÕES IN HOUSE</span>
+    <span>PRODUSLOG · OPERAÇÕES IN HOUSE</span>
   </div>
   <div class="topbar-right">
     <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
@@ -217,39 +186,36 @@
 </div>
 
 <div class="layout">
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-section">PRINCIPAL</div>
     <a href="/dashboard.html" class="nav-item"><span class="nav-icon">◈</span> Visão Geral</a>
-    <a href="/operacoes.html" class="nav-item ativo"><span class="nav-icon">⬡</span> <span id="nav-ops">Operações IN HOUSE</span></a>
-    <a href="/transportadoras.html" class="nav-item"><span class="nav-icon">◎</span> <span id="nav-transp">Transportadoras</span></a>
+    <a href="/operacoes.html" class="nav-item ativo"><span class="nav-icon">⬡</span> Operações IN HOUSE</a>
+    <a href="/transportadoras.html" class="nav-item"><span class="nav-icon">◎</span> Transportadoras</a>
     <a href="/pdca.html" class="nav-item"><span class="nav-icon">▦</span> Planos PDCA</a>
     <div class="sidebar-section">GESTÃO</div>
-    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> <span id="nav-oc">Ocorrências</span></a>
-    <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> <span id="nav-rel">Relatórios</span></a>
+    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
+    <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
   </aside>
 
   <main class="main">
     <div class="page-header">
       <div>
-        <div class="page-title" id="page-title">Operações IN HOUSE</div>
-        <div class="page-sub" id="page-sub">Gestão de equipes e operações por cliente</div>
+        <div class="page-title">Operações IN HOUSE</div>
+        <div class="page-sub">Gestão de equipes e operações por cliente</div>
       </div>
-      <button class="btn btn-primary" onclick="abrirModal()">+ <span id="btn-nova">Nova Operação</span></button>
+      <button class="btn btn-primary" onclick="abrirModal()">+ Nova Operação</button>
     </div>
 
-    <!-- Filtros -->
     <div class="filtros">
-      <button class="filtro-btn ativo" onclick="filtrar('todos', this)" id="f-todos">Todos</button>
+      <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
       <button class="filtro-btn" onclick="filtrar('BR', this)">🇧🇷 Brasil</button>
       <button class="filtro-btn" onclick="filtrar('AR', this)">🇦🇷 Argentina</button>
       <button class="filtro-btn" onclick="filtrar('PT', this)">🇵🇹 Portugal</button>
-      <button class="filtro-btn" onclick="filtrar('ativo', this)" id="f-ativo">✅ Ativos</button>
-      <button class="filtro-btn" onclick="filtrar('alerta', this)" id="f-alerta">⚠️ Alerta</button>
-      <button class="filtro-btn" onclick="filtrar('critico', this)" id="f-critico">🔴 Críticos</button>
+      <button class="filtro-btn" onclick="filtrar('ativo', this)">✅ Ativos</button>
+      <button class="filtro-btn" onclick="filtrar('alerta', this)">⚠️ Alerta</button>
+      <button class="filtro-btn" onclick="filtrar('critico', this)">🔴 Críticos</button>
     </div>
 
-    <!-- Grid de operações -->
     <div class="ops-grid" id="ops-grid">
       <div class="loading">Carregando operações...</div>
     </div>
@@ -267,17 +233,17 @@
       <input type="hidden" id="op-id">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" id="lbl-cliente">Cliente *</label>
+          <label class="form-label">Cliente *</label>
           <input class="form-input" id="op-cliente" placeholder="Ex: Seara Alimentos">
         </div>
         <div class="form-group">
-          <label class="form-label" id="lbl-local">Local *</label>
+          <label class="form-label">Local *</label>
           <input class="form-input" id="op-local" placeholder="Ex: Cajamar, SP">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" id="lbl-pais">País *</label>
+          <label class="form-label">País *</label>
           <select class="form-select" id="op-pais">
             <option value="BR">🇧🇷 Brasil</option>
             <option value="AR">🇦🇷 Argentina</option>
@@ -285,16 +251,16 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label" id="lbl-equipe">Colaboradores</label>
+          <label class="form-label">Colaboradores</label>
           <input class="form-input" type="number" id="op-equipe" placeholder="0" min="0">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label" id="lbl-servicos">Serviços (separados por vírgula)</label>
+        <label class="form-label">Serviços (separados por vírgula)</label>
         <input class="form-input" id="op-servicos" placeholder="Ex: Armazém, Picking, NF, Expedição">
       </div>
       <div class="form-group">
-        <label class="form-label" id="lbl-status">Status</label>
+        <label class="form-label">Status</label>
         <select class="form-select" id="op-status">
           <option value="ativo">✅ Ativo</option>
           <option value="alerta">⚠️ Alerta</option>
@@ -302,12 +268,12 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" id="lbl-notas">Notas</label>
+        <label class="form-label">Notas</label>
         <textarea class="form-textarea" id="op-notas" placeholder="Observações sobre a operação..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModal()" id="btn-cancelar">Cancelar</button>
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarOperacao()" id="btn-salvar">Salvar</button>
     </div>
   </div>
@@ -336,12 +302,8 @@ function filtrar(tipo, btn) {
 
 function renderOps() {
   let ops = todasOps;
-
-  if (filtroAtual === 'BR' || filtroAtual === 'AR' || filtroAtual === 'PT') {
-    ops = ops.filter(o => o.pais === filtroAtual);
-  } else if (['ativo','alerta','critico'].includes(filtroAtual)) {
-    ops = ops.filter(o => o.status === filtroAtual);
-  }
+  if (['BR','AR','PT'].includes(filtroAtual)) ops = ops.filter(o => o.pais === filtroAtual);
+  else if (['ativo','alerta','critico'].includes(filtroAtual)) ops = ops.filter(o => o.status === filtroAtual);
 
   const grid = document.getElementById('ops-grid');
 
@@ -386,6 +348,7 @@ function renderOps() {
           <button class="btn-sm btn-sm-ghost" onclick="editarOp(${JSON.stringify(op).replace(/"/g,'&quot;')})">✏️ Editar</button>
           <button class="btn-sm btn-sm-ghost" onclick="window.location='/ocorrencias.html?op=${op.id}'">📋 Ocorrências</button>
           <button class="btn-sm btn-sm-ghost" onclick="window.location='/pdca.html?op=${op.id}'">📊 PDCA</button>
+          ${isAdmin() ? `<button class="btn-sm btn-sm-danger" onclick="deletarOp('${op.id}', '${op.cliente.replace(/'/g,"\\'")}')">🗑️ Excluir</button>` : ''}
         </div>
       </div>
     </div>
@@ -405,10 +368,7 @@ function abrirModal(op = null) {
   document.getElementById('modal').classList.add('aberto');
 }
 
-function fecharModal() {
-  document.getElementById('modal').classList.remove('aberto');
-}
-
+function fecharModal() { document.getElementById('modal').classList.remove('aberto'); }
 function editarOp(op) { abrirModal(op); }
 
 async function salvarOperacao() {
@@ -423,21 +383,23 @@ async function salvarOperacao() {
     notas: document.getElementById('op-notas').value.trim()
   };
 
-  if (!body.cliente || !body.local) {
-    alert('Cliente e local são obrigatórios');
-    return;
-  }
+  if (!body.cliente || !body.local) { alert('Cliente e local são obrigatórios'); return; }
 
   const btn = document.getElementById('btn-salvar');
   btn.disabled = true; btn.textContent = '...';
 
   const url = id ? `/api/operacoes/${id}` : '/api/operacoes';
   const method = id ? 'PUT' : 'POST';
-
   const res = await apiPost(url, body, method);
   btn.disabled = false; btn.textContent = 'Salvar';
 
-  if (res) { fecharModal(); carregarOperacoes(); }
+  if (res) { fecharModal(); carregarOperacoes(); toast('Operação salva!', 'success'); }
+}
+
+async function deletarOp(id, nome) {
+  if (!confirm(`Excluir a operação "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await apiDelete(`/api/operacoes/${id}`);
+  if (res) { toast('Operação excluída', 'success'); carregarOperacoes(); }
 }
 
 carregarOperacoes();
