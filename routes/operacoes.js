@@ -1,115 +1,456 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../database/db');
-const auth = require('./middleware');
-
-// GET /api/operacoes
-router.get('/', auth, async (req, res) => {
-  const { pais, status } = req.query;
-  let where = [];
-  let params = [];
-  let i = 1;
-
-  if (pais) { where.push(`o.pais = $${i++}`); params.push(pais); }
-  if (status) { where.push(`o.status = $${i++}`); params.push(status); }
-
-  const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : '';
-
-  try {
-    const { rows } = await db.query(`
-      SELECT o.*,
-        (SELECT COUNT(*) FROM ocorrencias oc
-         WHERE oc.operacao_id = o.id AND oc.status = 'aberta') as ocorrencias_abertas,
-        (SELECT json_agg(json_build_object('data', k.data_referencia,
-           'acuracidade', k.acuracidade_inventario,
-           'picking', k.taxa_erro_picking,
-           'produtividade', k.produtividade_hora,
-           'lead_time', k.lead_time_expedicao))
-         FROM (SELECT * FROM kpi_registros WHERE operacao_id = o.id
-               ORDER BY data_referencia DESC LIMIT 6) k) as kpi_historico
-      FROM operacoes o ${whereClause}
-      ORDER BY o.cliente
-    `, params);
-
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Erro ao listar operações' });
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OperaLog — Operações IN HOUSE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared.css">
+<style>
+  .filtros {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
   }
-});
 
-// GET /api/operacoes/:id
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const { rows } = await db.query(
-      'SELECT * FROM operacoes WHERE id = $1', [req.params.id]
-    );
-    if (!rows.length) return res.status(404).json({ erro: 'Operação não encontrada' });
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro interno' });
+  .filtro-btn {
+    padding: 7px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text);
+    font-family: var(--font-body); transition: all 0.15s;
   }
-});
 
-// POST /api/operacoes
-router.post('/', auth, async (req, res) => {
-  const { cliente, local, pais, equipe_qtd, servicos, status, notas } = req.body;
-  if (!cliente || !local || !pais)
-    return res.status(400).json({ erro: 'Cliente, local e país obrigatórios' });
+  .filtro-btn.ativo { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .filtro-btn:hover { border-color: var(--green); }
 
-  try {
-    const { rows } = await db.query(`
-      INSERT INTO operacoes (cliente, local, pais, equipe_qtd, servicos, status, notas)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `, [cliente, local, pais, equipe_qtd || 0, servicos || [], status || 'ativo', notas]);
-
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Erro ao criar operação' });
+  .ops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
   }
-});
 
-// PUT /api/operacoes/:id
-router.put('/:id', auth, async (req, res) => {
-  const { cliente, local, pais, equipe_qtd, servicos, status, notas } = req.body;
-
-  try {
-    const { rows } = await db.query(`
-      UPDATE operacoes
-      SET cliente = COALESCE($1, cliente),
-          local = COALESCE($2, local),
-          pais = COALESCE($3, pais),
-          equipe_qtd = COALESCE($4, equipe_qtd),
-          servicos = COALESCE($5, servicos),
-          status = COALESCE($6, status),
-          notas = COALESCE($7, notas),
-          atualizado_em = NOW()
-      WHERE id = $8 RETURNING *
-    `, [cliente, local, pais, equipe_qtd, servicos, status, notas, req.params.id]);
-
-    if (!rows.length) return res.status(404).json({ erro: 'Operação não encontrada' });
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao atualizar operação' });
+  .op-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+    transition: all 0.2s; cursor: pointer;
+    animation: fadeUp 0.3s ease both;
   }
-});
 
-// DELETE /api/operacoes/:id (admin only)
-router.delete('/:id', auth, async (req, res) => {
-  if (req.usuario.perfil !== 'admin')
-    return res.status(403).json({ erro: 'Acesso negado' });
+  .op-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 
-  try {
-    await db.query(
-      "UPDATE operacoes SET status = 'encerrado' WHERE id = $1",
-      [req.params.id]
-    );
-    res.json({ mensagem: 'Operação encerrada com sucesso' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro interno' });
+  .op-card-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: flex-start;
   }
-});
 
-module.exports = router;
+  .op-cliente {
+    font-family: var(--font-display);
+    font-size: 16px; font-weight: 800;
+    color: var(--text); margin-bottom: 3px;
+  }
+
+  .op-local {
+    font-size: 12px; font-weight: 600;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .op-body { padding: 14px 18px; }
+
+  .op-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 12px;
+  }
+
+  .op-stat {
+    background: var(--surface2);
+    border-radius: 8px; padding: 10px 12px;
+  }
+
+  .op-stat-label {
+    font-size: 10px; font-weight: 700;
+    color: var(--text); /* BRANCO BOLD */
+    text-transform: uppercase; letter-spacing: 1px;
+    font-family: var(--font-mono); margin-bottom: 4px;
+  }
+
+  .op-stat-value {
+    font-family: var(--font-display);
+    font-size: 20px; font-weight: 800; color: var(--text);
+  }
+
+  .op-servicos {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+  }
+
+  .servico-tag {
+    padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; font-weight: 700;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text); /* BRANCO BOLD */
+    font-family: var(--font-mono);
+  }
+
+  .op-actions {
+    display: flex; gap: 8px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-sm {
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer; border: none;
+    font-family: var(--font-body); transition: all 0.15s;
+  }
+
+  .btn-sm-ghost {
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border); flex: 1;
+  }
+
+  .btn-sm-ghost:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-sm-danger {
+    background: var(--red-dim); color: var(--red);
+    border: 1px solid rgba(255,77,106,0.3);
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; display: none;
+  }
+
+  .modal-overlay.aberto { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto;
+    animation: fadeUp 0.2s ease;
+  }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 18px; font-weight: 800; color: var(--text);
+  }
+
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .modal-body { padding: 24px; }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block; font-size: 13px; font-weight: 700;
+    color: var(--text); margin-bottom: 8px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 11px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--font-body);
+    font-size: 14px; font-weight: 500; outline: none; transition: all 0.15s;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--green); background: rgba(0,200,140,0.05);
+  }
+
+  .form-select option { background: var(--surface); color: var(--text); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; justify-content: flex-end;
+  }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted); grid-column: 1/-1;
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .empty-sub { font-size: 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">OL</div>
+    <div class="logo-text">Opera<span>Log</span></div>
+  </div>
+  <div class="topbar-center">
+    <div class="pulse"></div>
+    <span id="empresa-label">PRODUSLOG · OPERAÇÕES IN HOUSE</span>
+  </div>
+  <div class="topbar-right">
+    <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
+    <div class="user-menu" onclick="logout()">
+      <div class="user-avatar" id="user-initials">?</div>
+      <span class="user-name" id="user-name">Usuário</span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">PRINCIPAL</div>
+    <a href="/dashboard.html" class="nav-item"><span class="nav-icon">◈</span> Visão Geral</a>
+    <a href="/operacoes.html" class="nav-item ativo"><span class="nav-icon">⬡</span> <span id="nav-ops">Operações IN HOUSE</span></a>
+    <a href="/transportadoras.html" class="nav-item"><span class="nav-icon">◎</span> <span id="nav-transp">Transportadoras</span></a>
+    <a href="/pdca.html" class="nav-item"><span class="nav-icon">▦</span> Planos PDCA</a>
+    <div class="sidebar-section">GESTÃO</div>
+    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> <span id="nav-oc">Ocorrências</span></a>
+    <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> <span id="nav-rel">Relatórios</span></a>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="page-title">Operações IN HOUSE</div>
+        <div class="page-sub" id="page-sub">Gestão de equipes e operações por cliente</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModal()">+ <span id="btn-nova">Nova Operação</span></button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros">
+      <button class="filtro-btn ativo" onclick="filtrar('todos', this)" id="f-todos">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('BR', this)">🇧🇷 Brasil</button>
+      <button class="filtro-btn" onclick="filtrar('AR', this)">🇦🇷 Argentina</button>
+      <button class="filtro-btn" onclick="filtrar('PT', this)">🇵🇹 Portugal</button>
+      <button class="filtro-btn" onclick="filtrar('ativo', this)" id="f-ativo">✅ Ativos</button>
+      <button class="filtro-btn" onclick="filtrar('alerta', this)" id="f-alerta">⚠️ Alerta</button>
+      <button class="filtro-btn" onclick="filtrar('critico', this)" id="f-critico">🔴 Críticos</button>
+    </div>
+
+    <!-- Grid de operações -->
+    <div class="ops-grid" id="ops-grid">
+      <div class="loading">Carregando operações...</div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL NOVA/EDITAR OPERAÇÃO -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-titulo">Nova Operação</div>
+      <button class="modal-close" onclick="fecharModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="op-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" id="lbl-cliente">Cliente *</label>
+          <input class="form-input" id="op-cliente" placeholder="Ex: Seara Alimentos">
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="lbl-local">Local *</label>
+          <input class="form-input" id="op-local" placeholder="Ex: Cajamar, SP">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" id="lbl-pais">País *</label>
+          <select class="form-select" id="op-pais">
+            <option value="BR">🇧🇷 Brasil</option>
+            <option value="AR">🇦🇷 Argentina</option>
+            <option value="PT">🇵🇹 Portugal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="lbl-equipe">Colaboradores</label>
+          <input class="form-input" type="number" id="op-equipe" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lbl-servicos">Serviços (separados por vírgula)</label>
+        <input class="form-input" id="op-servicos" placeholder="Ex: Armazém, Picking, NF, Expedição">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lbl-status">Status</label>
+        <select class="form-select" id="op-status">
+          <option value="ativo">✅ Ativo</option>
+          <option value="alerta">⚠️ Alerta</option>
+          <option value="critico">🔴 Crítico</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lbl-notas">Notas</label>
+        <textarea class="form-textarea" id="op-notas" placeholder="Observações sobre a operação..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal()" id="btn-cancelar">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarOperacao()" id="btn-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/shared.js"></script>
+<script>
+let todasOps = [];
+let filtroAtual = 'todos';
+
+const PAIS_FLAG = { BR: '🇧🇷', AR: '🇦🇷', PT: '🇵🇹' };
+const STATUS_CLASS = { ativo: 'status-ativo', alerta: 'status-alerta', critico: 'status-critico' };
+const STATUS_LABEL = { ativo: '● Ativo', alerta: '● Alerta', critico: '● Crítico' };
+
+async function carregarOperacoes() {
+  todasOps = await api('/api/operacoes') || [];
+  renderOps();
+}
+
+function filtrar(tipo, btn) {
+  filtroAtual = tipo;
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderOps();
+}
+
+function renderOps() {
+  let ops = todasOps;
+
+  if (filtroAtual === 'BR' || filtroAtual === 'AR' || filtroAtual === 'PT') {
+    ops = ops.filter(o => o.pais === filtroAtual);
+  } else if (['ativo','alerta','critico'].includes(filtroAtual)) {
+    ops = ops.filter(o => o.status === filtroAtual);
+  }
+
+  const grid = document.getElementById('ops-grid');
+
+  if (!ops.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <div class="empty-title">Nenhuma operação encontrada</div>
+        <div class="empty-sub">Clique em "+ Nova Operação" para adicionar</div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = ops.map(op => `
+    <div class="op-card">
+      <div class="op-card-header">
+        <div>
+          <div class="op-cliente">${op.cliente}</div>
+          <div class="op-local">${PAIS_FLAG[op.pais] || ''} ${op.local}</div>
+        </div>
+        <span class="status-pill ${STATUS_CLASS[op.status] || 'status-ativo'}">
+          ${STATUS_LABEL[op.status] || op.status}
+        </span>
+      </div>
+      <div class="op-body">
+        <div class="op-stats">
+          <div class="op-stat">
+            <div class="op-stat-label">👥 Equipe</div>
+            <div class="op-stat-value" style="color:var(--blue)">${op.equipe_qtd}</div>
+          </div>
+          <div class="op-stat">
+            <div class="op-stat-label">🔴 Ocorrências</div>
+            <div class="op-stat-value" style="color:${op.ocorrencias_abertas > 0 ? 'var(--red)' : 'var(--green)'}">
+              ${op.ocorrencias_abertas || 0}
+            </div>
+          </div>
+        </div>
+        <div class="op-servicos">
+          ${(op.servicos || []).map(s => `<span class="servico-tag">${s}</span>`).join('')}
+        </div>
+        <div class="op-actions">
+          <button class="btn-sm btn-sm-ghost" onclick="editarOp(${JSON.stringify(op).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          <button class="btn-sm btn-sm-ghost" onclick="window.location='/ocorrencias.html?op=${op.id}'">📋 Ocorrências</button>
+          <button class="btn-sm btn-sm-ghost" onclick="window.location='/pdca.html?op=${op.id}'">📊 PDCA</button>
+          ${usuario.perfil === 'admin' ? `<button class="btn-sm btn-sm-danger" onclick="excluirOp('${op.id}','${op.cliente}')">🗑️</button>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirModal(op = null) {
+  document.getElementById('op-id').value = op?.id || '';
+  document.getElementById('op-cliente').value = op?.cliente || '';
+  document.getElementById('op-local').value = op?.local || '';
+  document.getElementById('op-pais').value = op?.pais || 'BR';
+  document.getElementById('op-equipe').value = op?.equipe_qtd || '';
+  document.getElementById('op-servicos').value = (op?.servicos || []).join(', ');
+  document.getElementById('op-status').value = op?.status || 'ativo';
+  document.getElementById('op-notas').value = op?.notas || '';
+  document.getElementById('modal-titulo').textContent = op ? 'Editar Operação' : 'Nova Operação';
+  document.getElementById('modal').classList.add('aberto');
+}
+
+function fecharModal() {
+  document.getElementById('modal').classList.remove('aberto');
+}
+
+function editarOp(op) { abrirModal(op); }
+
+async function excluirOp(id, nome) {
+  if (!confirm(`⚠️ Tem certeza que deseja encerrar a operação "${nome}"?\n\nEssa ação irá arquivar o registro. O histórico será preservado.`)) return;
+  const res = await apiPost(`/api/operacoes/${id}`, {}, 'DELETE');
+  if (res) {
+    toast(`Operação "${nome}" encerrada com sucesso.`, 'success');
+    carregarOperacoes();
+  }
+}
+
+async function salvarOperacao() {
+  const id = document.getElementById('op-id').value;
+  const body = {
+    cliente: document.getElementById('op-cliente').value.trim(),
+    local: document.getElementById('op-local').value.trim(),
+    pais: document.getElementById('op-pais').value,
+    equipe_qtd: parseInt(document.getElementById('op-equipe').value) || 0,
+    servicos: document.getElementById('op-servicos').value.split(',').map(s => s.trim()).filter(Boolean),
+    status: document.getElementById('op-status').value,
+    notas: document.getElementById('op-notas').value.trim()
+  };
+
+  if (!body.cliente || !body.local) {
+    alert('Cliente e local são obrigatórios');
+    return;
+  }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = '...';
+
+  const url = id ? `/api/operacoes/${id}` : '/api/operacoes';
+  const method = id ? 'PUT' : 'POST';
+
+  const res = await apiPost(url, body, method);
+  btn.disabled = false; btn.textContent = 'Salvar';
+
+  if (res) { fecharModal(); carregarOperacoes(); }
+}
+
+carregarOperacoes();
+</script>
+</body>
+</html>
