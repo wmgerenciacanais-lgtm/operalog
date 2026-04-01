@@ -17,15 +17,11 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px; overflow: hidden;
-    transition: all 0.2s; cursor: pointer;
+    transition: all 0.2s;
     animation: fadeUp 0.3s ease both;
   }
 
-  .transp-card:hover {
-    border-color: rgba(255,255,255,0.15);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  }
+  .transp-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 
   .transp-header {
     padding: 16px 18px 12px;
@@ -33,68 +29,30 @@
     display: flex; justify-content: space-between; align-items: center;
   }
 
-  .transp-nome {
-    font-family: var(--font-display);
-    font-size: 15px; font-weight: 800; color: var(--text);
-    margin-bottom: 3px;
-  }
-
-  .transp-regiao {
-    font-size: 11px; font-weight: 600;
-    color: var(--text-muted); font-family: var(--font-mono);
-  }
+  .transp-nome { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+  .transp-regiao { font-size: 11px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
 
   .score-circle {
     width: 52px; height: 52px; border-radius: 50%;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    border: 2px solid; position: relative;
+    border: 2px solid;
   }
 
-  .score-num {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800; line-height: 1;
-  }
-
-  .score-txt {
-    font-size: 9px; font-weight: 700;
-    font-family: var(--font-mono); opacity: 0.8;
-  }
+  .score-num { font-family: var(--font-display); font-size: 16px; font-weight: 800; line-height: 1; }
+  .score-txt { font-size: 9px; font-weight: 700; font-family: var(--font-mono); opacity: 0.8; }
 
   .transp-body { padding: 14px 18px; }
 
-  .pet-grid {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 8px; margin-bottom: 12px;
-  }
+  .pet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
 
-  .pet-item {
-    background: var(--surface2);
-    border-radius: 8px; padding: 8px 10px;
-    text-align: center;
-  }
+  .pet-item { background: var(--surface2); border-radius: 8px; padding: 8px 10px; text-align: center; }
 
-  .pet-label {
-    font-size: 9px; font-weight: 700; color: var(--text);
-    text-transform: uppercase; letter-spacing: 1px;
-    font-family: var(--font-mono); margin-bottom: 4px;
-    display: block;
-  }
+  .pet-label { font-size: 9px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono); margin-bottom: 4px; display: block; }
+  .pet-value { font-family: var(--font-display); font-size: 16px; font-weight: 800; }
+  .pet-meta { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); font-weight: 500; }
 
-  .pet-value {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800;
-  }
-
-  .pet-meta {
-    font-size: 9px; color: var(--text-muted);
-    font-family: var(--font-mono); font-weight: 500;
-  }
-
-  .transp-actions {
-    display: flex; gap: 8px;
-    padding-top: 10px; border-top: 1px solid var(--border);
-  }
+  .transp-actions { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
 
   .btn-sm {
     flex: 1; padding: 7px 10px; border-radius: 6px;
@@ -105,9 +63,9 @@
   }
 
   .btn-sm:hover { border-color: var(--green); color: var(--green); }
-  .btn-sm.green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .btn-sm.danger { background: var(--red-dim); color: var(--red); border-color: rgba(255,77,106,0.3); flex: none; }
+  .btn-sm.danger:hover { background: rgba(255,77,106,0.25); }
 
-  /* Painel PET */
   .pet-panel {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -117,35 +75,10 @@
   }
 
   .pet-panel.aberto { display: block; }
+  .pet-title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .pet-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; font-family: var(--font-mono); }
+  .pet-form-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
 
-  .pet-title {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800; color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .pet-sub {
-    font-size: 12px; font-weight: 600;
-    color: var(--text-muted); margin-bottom: 20px;
-    font-family: var(--font-mono);
-  }
-
-  .pet-form-grid {
-    display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .meta-info {
-    display: flex; gap: 8px; align-items: center;
-    padding: 8px 12px; border-radius: 6px;
-    background: var(--surface2); font-size: 11px;
-    font-weight: 600; color: var(--text-muted);
-    font-family: var(--font-mono); margin-bottom: 12px;
-  }
-
-  .meta-info span { color: var(--green); font-weight: 700; }
-
-  /* Filtros */
   .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 
   .filtro-btn {
@@ -204,24 +137,19 @@
       </div>
     </div>
 
-    <!-- Painel registro PET -->
     <div class="pet-panel" id="pet-panel">
       <div class="pet-title">📊 Registrar Avaliação PET</div>
       <div class="pet-sub">O score é calculado automaticamente pelo sistema com base nos indicadores abaixo</div>
-
       <div class="form-row" style="margin-bottom:12px">
         <div class="form-group">
           <label class="form-label">Transportadora *</label>
-          <select class="form-select" id="pet-transp">
-            <option value="">Selecione...</option>
-          </select>
+          <select class="form-select" id="pet-transp"><option value="">Selecione...</option></select>
         </div>
         <div class="form-group">
           <label class="form-label">Total de Viagens</label>
           <input class="form-input" type="number" id="pet-viagens" placeholder="Ex: 500" min="1">
         </div>
       </div>
-
       <div class="form-row" style="margin-bottom:12px">
         <div class="form-group">
           <label class="form-label">Período Início *</label>
@@ -232,7 +160,6 @@
           <input class="form-input" type="date" id="pet-fim">
         </div>
       </div>
-
       <div class="pet-form-grid">
         <div class="form-group">
           <label class="form-label">OTD % <span style="color:var(--green);font-size:10px">meta ≥95%</span></label>
@@ -252,27 +179,19 @@
         </div>
         <div class="form-group" style="grid-column:span 2">
           <label class="form-label">Preview do Score</label>
-          <div id="score-preview" style="
-            padding:11px 14px; border-radius:8px;
-            background:var(--surface2); border:1px solid var(--border);
-            font-family:var(--font-display); font-size:20px; font-weight:800;
-            color:var(--text-muted); text-align:center;
-          ">— / 10</div>
+          <div id="score-preview" style="padding:11px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text-muted);text-align:center">— / 10</div>
         </div>
       </div>
-
       <div class="form-group">
         <label class="form-label">Notas</label>
         <textarea class="form-textarea" id="pet-notas" placeholder="Observações sobre o período avaliado..."></textarea>
       </div>
-
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-ghost" onclick="togglePetPanel()">Cancelar</button>
         <button class="btn btn-primary" onclick="salvarPet()">💾 Salvar Avaliação PET</button>
       </div>
     </div>
 
-    <!-- Filtros -->
     <div class="filtros">
       <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
       <button class="filtro-btn" onclick="filtrar('BR',this)">🇧🇷 Brasil</button>
@@ -389,7 +308,6 @@ function renderTransp() {
     const sc = parseFloat(t.score) || 0;
     const cor = scoreColor(sc);
     const ultimo = t.historico_pet?.[0];
-
     return `
     <div class="transp-card">
       <div class="transp-header">
@@ -420,23 +338,19 @@ function renderTransp() {
             <div class="pet-value" style="color:${parseFloat(ultimo.ocorrencias_mil)<=5?'var(--green)':'var(--red)'}">${parseFloat(ultimo.ocorrencias_mil).toFixed(1)}</div>
             <div class="pet-meta">meta ≤5</div>
           </div>
-        </div>` : `
-        <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;font-weight:600">
-          Sem avaliação PET registrada
-        </div>`}
+        </div>` : `<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;font-weight:600">Sem avaliação PET registrada</div>`}
         <div class="transp-actions">
           <button class="btn-sm" onclick="registrarPetParaTransp('${t.id}', '${t.nome}')">📊 PET</button>
           <button class="btn-sm" onclick="window.location='/ocorrencias.html?transp=${t.id}'">⚠️ Oc.</button>
-          <button class="btn-sm" onclick="editarTransp(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn-sm" onclick="editarTransp(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          ${isAdmin() ? `<button class="btn-sm danger" onclick="deletarTransp('${t.id}', '${t.nome.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function togglePetPanel() {
-  document.getElementById('pet-panel').classList.toggle('aberto');
-}
+function togglePetPanel() { document.getElementById('pet-panel').classList.toggle('aberto'); }
 
 function registrarPetParaTransp(id, nome) {
   document.getElementById('pet-transp').value = id;
@@ -449,22 +363,17 @@ function calcularPreview() {
   const atraso = parseFloat(document.getElementById('pet-atraso').value) || 0;
   const oc = parseFloat(document.getElementById('pet-oc').value) || 0;
   const sat = parseFloat(document.getElementById('pet-sat').value) || 0;
-
   if (!otd) { document.getElementById('score-preview').textContent = '— / 10'; return; }
-
   const scoreOtd = Math.min(10, (otd / 95) * 10) * 0.4;
   let scoreAtraso = 0;
   if (atraso <= 2) scoreAtraso = 10 * 0.3;
   else if (atraso <= 4) scoreAtraso = (1 - ((atraso - 2) / 8)) * 10 * 0.3;
-
   const scoreOc = oc <= 5 ? 10 * 0.2 : Math.max(0, (1 - ((oc - 5) / 15)) * 10) * 0.2;
   const scoreSat = (sat / 10) * 10 * 0.1;
   const total = Math.round((scoreOtd + scoreAtraso + scoreOc + scoreSat) * 10) / 10;
-
   const cor = scoreColor(total);
   const el = document.getElementById('score-preview');
-  el.style.color = cor;
-  el.style.borderColor = cor;
+  el.style.color = cor; el.style.borderColor = cor;
   el.textContent = `${total.toFixed(1)} / 10 — ${scoreLabel(total)}`;
 }
 
@@ -479,18 +388,10 @@ async function salvarPet() {
     total_viagens: parseInt(document.getElementById('pet-viagens').value) || 0,
     notas: document.getElementById('pet-notas').value
   };
-
   const transpId = document.getElementById('pet-transp').value;
-  if (!transpId || !body.periodo_inicio || !body.periodo_fim) {
-    alert('Transportadora e período são obrigatórios'); return;
-  }
-
+  if (!transpId || !body.periodo_inicio || !body.periodo_fim) { alert('Transportadora e período são obrigatórios'); return; }
   const res = await apiPost(`/api/transportadoras/${transpId}/pet`, body);
-  if (res) {
-    toast('Avaliação PET salva com sucesso!', 'success');
-    togglePetPanel();
-    carregarTransp();
-  }
+  if (res) { toast('Avaliação PET salva!', 'success'); togglePetPanel(); carregarTransp(); }
 }
 
 function abrirModalTransp(t = null) {
@@ -518,13 +419,17 @@ async function salvarTransp() {
     contato: document.getElementById('transp-contato').value.trim(),
     email: document.getElementById('transp-email').value.trim()
   };
-
   if (!body.nome) { alert('Nome é obrigatório'); return; }
-
   const url = id ? `/api/transportadoras/${id}` : '/api/transportadoras';
   const method = id ? 'PUT' : 'POST';
   const res = await apiPost(url, body, method);
   if (res) { fecharModal(); carregarTransp(); toast('Transportadora salva!', 'success'); }
+}
+
+async function deletarTransp(id, nome) {
+  if (!confirm(`Excluir a transportadora "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await apiDelete(`/api/transportadoras/${id}`);
+  if (res) { toast('Transportadora excluída', 'success'); carregarTransp(); }
 }
 
 carregarTransp();
