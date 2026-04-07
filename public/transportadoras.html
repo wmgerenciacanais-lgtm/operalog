@@ -5,92 +5,139 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OperaLog — Transportadoras</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
 <style>
-  .transp-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-  }
+:root {
+  --bg: #060A0F; --surface: #0D1420; --surface2: #111B2E;
+  --border: rgba(255,255,255,0.08);
+  --green: #00C88C; --green-dim: rgba(0,200,140,0.15);
+  --amber: #F5C842; --amber-dim: rgba(245,200,66,0.15);
+  --blue: #4A9EFF; --blue-dim: rgba(74,158,255,0.15);
+  --red: #FF4D6A; --red-dim: rgba(255,77,106,0.15);
+  --teal: #0F766E; --teal-dim: rgba(15,118,110,0.15);
+  --text: #FFFFFF; --text-muted: #A0AEC0;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(0,200,140,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(0,200,140,0.025) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; z-index:0; }
 
-  .transp-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden;
-    transition: all 0.2s;
-    animation: fadeUp 0.3s ease both;
-  }
+/* TOPBAR */
+.topbar { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 28px; height:62px; background:rgba(6,10,15,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:34px; height:34px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:14px; color:#000; }
+.logo-text { font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--text); }
+.logo-text span { color:var(--green); }
+.topbar-center { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:6px 14px; }
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,140,0.4);} 50%{box-shadow:0 0 0 5px transparent;} }
+.topbar-center span { font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text); letter-spacing:0.5px; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.clock { font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text); text-align:right; }
+.clock-date { font-size:10px; color:var(--text-muted); }
+.user-menu { display:flex; align-items:center; gap:10px; padding:6px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:border-color 0.15s; }
+.user-menu:hover { border-color:var(--green); }
+.user-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--green),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#000; }
+.user-name { font-size:13px; font-weight:700; color:var(--text); }
 
-  .transp-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+/* LAYOUT */
+.layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 62px); position:relative; z-index:1; }
 
-  .transp-header {
-    padding: 16px 18px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-  }
+/* SIDEBAR */
+.sidebar { border-right:1px solid var(--border); padding:20px 12px; background:rgba(13,20,32,0.6); display:flex; flex-direction:column; gap:2px; }
+.sidebar-section { font-family:var(--font-mono); font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:2px; text-transform:uppercase; padding:14px 12px 6px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; transition:all 0.15s; font-size:14px; font-weight:600; color:var(--text-muted); text-decoration:none; }
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.ativo { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,200,140,0.25); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-wpp { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:800; color:#fff; text-decoration:none; background:linear-gradient(135deg,#128C7E,#25D366); margin-top:8px; transition:all 0.15s; }
+.nav-wpp:hover { background:linear-gradient(135deg,#075E54,#128C7E); }
 
-  .transp-nome { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
-  .transp-regiao { font-size: 11px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
+/* MAIN */
+.main { padding:24px 28px; overflow-y:auto; }
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+.page-title { font-family:var(--font-display); font-size:26px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+.page-sub { font-size:13px; font-weight:500; color:var(--text-muted); margin-top:3px; }
 
-  .score-circle {
-    width: 52px; height: 52px; border-radius: 50%;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    border: 2px solid;
-  }
+/* BUTTONS */
+.btn { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:var(--font-body); transition:all 0.15s; }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:var(--green); color:var(--green); }
+.btn-primary { background:var(--green); color:#000; font-weight:800; }
+.btn-primary:hover { background:#00e6a3; }
+.btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
 
-  .score-num { font-family: var(--font-display); font-size: 16px; font-weight: 800; line-height: 1; }
-  .score-txt { font-size: 9px; font-weight: 700; font-family: var(--font-mono); opacity: 0.8; }
+/* FILTROS */
+.filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.filtro-btn { padding:7px 16px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:var(--font-body); transition:all 0.15s; }
+.filtro-btn.ativo { background:var(--green-dim); border-color:var(--green); color:var(--green); }
+.filtro-btn:hover { border-color:var(--green); }
 
-  .transp-body { padding: 14px 18px; }
+/* GRID TRANSPORTADORAS */
+.transp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+.transp-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; transition:all 0.2s; animation:fadeUp 0.3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+.transp-card:hover { border-color:rgba(255,255,255,0.15); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+.transp-header { padding:16px 18px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.transp-nome { font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text); margin-bottom:3px; }
+.transp-regiao { font-size:11px; font-weight:600; color:var(--text-muted); font-family:var(--font-mono); }
+.score-circle { width:52px; height:52px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px solid; }
+.score-num { font-family:var(--font-display); font-size:16px; font-weight:800; line-height:1; }
+.score-txt { font-size:9px; font-weight:700; font-family:var(--font-mono); opacity:0.8; }
+.transp-body { padding:14px 18px; }
+.pet-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.pet-item { background:var(--surface2); border-radius:8px; padding:8px 10px; text-align:center; }
+.pet-label { font-size:9px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:1px; font-family:var(--font-mono); margin-bottom:4px; display:block; }
+.pet-value { font-family:var(--font-display); font-size:16px; font-weight:800; }
+.pet-meta { font-size:9px; color:var(--text-muted); font-family:var(--font-mono); font-weight:500; }
+.transp-actions { display:flex; gap:8px; padding-top:10px; border-top:1px solid var(--border); }
+.btn-sm { flex:1; padding:7px 10px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:var(--font-body); transition:all 0.15s; }
+.btn-sm:hover { border-color:var(--green); color:var(--green); }
+.btn-sm-danger { background:var(--red-dim) !important; color:var(--red) !important; border-color:rgba(255,77,106,0.3) !important; flex:0 !important; }
 
-  .pet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
+/* PAINEL PET */
+.pet-panel { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:20px; display:none; animation:fadeUp 0.2s ease; }
+.pet-panel.aberto { display:block; }
 
-  .pet-item { background: var(--surface2); border-radius: 8px; padding: 8px 10px; text-align: center; }
+/* STATUS */
+.status-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; font-family:var(--font-mono); }
+.status-ativo { background:var(--green-dim); color:var(--green); }
+.status-alerta { background:var(--amber-dim); color:var(--amber); }
+.status-critico { background:var(--red-dim); color:var(--red); }
 
-  .pet-label { font-size: 9px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono); margin-bottom: 4px; display: block; }
-  .pet-value { font-family: var(--font-display); font-size: 16px; font-weight: 800; }
-  .pet-meta { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); font-weight: 500; }
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.aberto { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; animation:fadeUp 0.2s ease; }
+.modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.modal-title { font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--text); }
+.modal-close { width:32px; height:32px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+.form-group { margin-bottom:16px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-label { display:block; font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.form-input, .form-select, .form-textarea { width:100%; padding:11px 14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:500; outline:none; transition:all 0.15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--green); background:rgba(0,200,140,0.05); }
+.form-input::placeholder { color:rgba(255,255,255,0.2); }
+.form-select option { background:var(--surface); color:var(--text); }
+.form-textarea { resize:vertical; min-height:80px; }
 
-  .transp-actions { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+/* SCORE PREVIEW */
+#score-preview { padding:11px 14px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--text-muted); text-align:center; }
 
-  .btn-sm {
-    flex: 1; padding: 7px 10px; border-radius: 6px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
+/* LOADING */
+.loading { display:flex; align-items:center; justify-content:center; padding:40px; color:var(--text-muted); font-size:14px; font-weight:600; }
 
-  .btn-sm:hover { border-color: var(--green); color: var(--green); }
-  .btn-sm.danger { background: var(--red-dim); color: var(--red); border-color: rgba(255,77,106,0.3); flex: none; }
-  .btn-sm.danger:hover { background: rgba(255,77,106,0.25); }
+/* TOAST */
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { background:var(--surface); border-radius:10px; padding:14px 20px; font-family:var(--font-body); font-size:14px; font-weight:700; color:var(--text); box-shadow:0 8px 24px rgba(0,0,0,0.3); animation:fadeUp 0.2s ease; max-width:320px; border-left:4px solid var(--green); }
+.toast.error { border-left-color:var(--red); }
 
-  .pet-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; padding: 24px;
-    margin-bottom: 20px; display: none;
-    animation: fadeUp 0.2s ease;
-  }
-
-  .pet-panel.aberto { display: block; }
-  .pet-title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
-  .pet-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; font-family: var(--font-mono); }
-  .pet-form-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
-
-  .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-
-  .filtro-btn {
-    padding: 7px 16px; border-radius: 20px;
-    font-size: 13px; font-weight: 700;
-    cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
-
-  .filtro-btn.ativo { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .filtro-btn:hover { border-color: var(--green); }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 </style>
 </head>
 <body>
@@ -123,13 +170,17 @@
     <div class="sidebar-section">GESTÃO</div>
     <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
     <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
+    <div class="sidebar-section">COMUNICAÇÃO</div>
+    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-wpp">
+      <span class="nav-icon">💬</span> OperaLog Board
+    </a>
   </aside>
 
   <main class="main">
     <div class="page-header">
       <div>
         <div class="page-title">Transportadoras — PET</div>
-        <div class="page-sub">Programa de Excelência em Transportes — Score automático por OTD, atraso médio e ocorrências</div>
+        <div class="page-sub">Programa de Excelência em Transportes — Score automático por OTD, atraso e ocorrências</div>
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-ghost" onclick="togglePetPanel()">📊 Registrar PET</button>
@@ -137,9 +188,10 @@
       </div>
     </div>
 
+    <!-- PAINEL PET -->
     <div class="pet-panel" id="pet-panel">
-      <div class="pet-title">📊 Registrar Avaliação PET</div>
-      <div class="pet-sub">O score é calculado automaticamente pelo sistema com base nos indicadores abaixo</div>
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">📊 Registrar Avaliação PET</div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:20px;font-family:var(--font-mono)">Score calculado automaticamente com base nos indicadores</div>
       <div class="form-row" style="margin-bottom:12px">
         <div class="form-group">
           <label class="form-label">Transportadora *</label>
@@ -160,7 +212,7 @@
           <input class="form-input" type="date" id="pet-fim">
         </div>
       </div>
-      <div class="pet-form-grid">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
         <div class="form-group">
           <label class="form-label">OTD % <span style="color:var(--green);font-size:10px">meta ≥95%</span></label>
           <input class="form-input" type="number" id="pet-otd" placeholder="95.0" min="0" max="100" step="0.1" oninput="calcularPreview()">
@@ -179,19 +231,20 @@
         </div>
         <div class="form-group" style="grid-column:span 2">
           <label class="form-label">Preview do Score</label>
-          <div id="score-preview" style="padding:11px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text-muted);text-align:center">— / 10</div>
+          <div id="score-preview">— / 10</div>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">Notas</label>
-        <textarea class="form-textarea" id="pet-notas" placeholder="Observações sobre o período avaliado..."></textarea>
+        <textarea class="form-textarea" id="pet-notas" placeholder="Observações sobre o período..."></textarea>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-ghost" onclick="togglePetPanel()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarPet()">💾 Salvar Avaliação PET</button>
+        <button class="btn btn-primary" id="btn-salvar-pet" onclick="salvarPet()">💾 Salvar Avaliação PET</button>
       </div>
     </div>
 
+    <!-- FILTROS -->
     <div class="filtros">
       <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
       <button class="filtro-btn" onclick="filtrar('BR',this)">🇧🇷 Brasil</button>
@@ -208,7 +261,7 @@
   </main>
 </div>
 
-<!-- Modal Transportadora -->
+<!-- MODAL TRANSPORTADORA -->
 <div class="modal-overlay" id="modal-transp">
   <div class="modal">
     <div class="modal-header">
@@ -254,29 +307,65 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarTransp()">Salvar</button>
+      <button class="btn btn-primary" id="btn-salvar-transp" onclick="salvarTransp()">Salvar</button>
     </div>
   </div>
 </div>
 
-<script src="/shared.js"></script>
+<div class="toast-container" id="toast-container"></div>
+
 <script>
-let todasTransp = [];
-let filtroAtual = 'todos';
+// ─── SETUP ────────────────────────────────────────────
+const token   = localStorage.getItem('operalog_token');
+const usuario = JSON.parse(localStorage.getItem('operalog_usuario') || '{}');
+if (!token) { window.location.href = '/'; }
+
+document.getElementById('user-name').textContent = usuario.nome || 'Usuário';
+document.getElementById('user-initials').textContent =
+  (usuario.nome || 'U').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', {weekday:'short',day:'2-digit',month:'short'});
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function logout() { localStorage.removeItem('operalog_token'); localStorage.removeItem('operalog_usuario'); window.location.href = '/'; }
+
+function toast(msg, tipo = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (tipo === 'error' ? ' error' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function scoreColor(sc) { return sc >= 8 ? 'var(--green)' : sc >= 6 ? 'var(--amber)' : 'var(--red)'; }
+function scoreLabel(sc) { return sc >= 8 ? 'ÓTIMO' : sc >= 6 ? 'ALERTA' : 'CRÍTICO'; }
+
 const FLAGS = { BR:'🇧🇷', AR:'🇦🇷', PT:'🇵🇹' };
 
+// ─── DADOS ────────────────────────────────────────────
+let todasTransp = [];
+let filtroAtual = 'todos';
+
 async function carregarTransp() {
-  todasTransp = await api('/api/transportadoras') || [];
-  popularSelectPet();
-  renderTransp();
+  try {
+    const res = await fetch('/api/transportadoras', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.status === 401) { logout(); return; }
+    todasTransp = await res.json();
+    popularSelectPet();
+    renderTransp();
+  } catch (e) {
+    document.getElementById('transp-grid').innerHTML = '<div class="loading">Erro ao carregar. Verifique sua conexão.</div>';
+  }
 }
 
 function popularSelectPet() {
   const sel = document.getElementById('pet-transp');
   sel.innerHTML = '<option value="">Selecione...</option>';
-  todasTransp.forEach(t => {
-    sel.innerHTML += `<option value="${t.id}">${t.nome} ${FLAGS[t.pais]||''}</option>`;
-  });
+  todasTransp.forEach(t => { sel.innerHTML += `<option value="${t.id}">${t.nome} ${FLAGS[t.pais]||''}</option>`; });
 }
 
 function filtrar(tipo, btn) {
@@ -289,11 +378,12 @@ function filtrar(tipo, btn) {
 function renderTransp() {
   let ts = todasTransp;
   if (['BR','AR','PT'].includes(filtroAtual)) ts = ts.filter(t => t.pais === filtroAtual);
-  else if (filtroAtual === 'ok') ts = ts.filter(t => t.score >= 8);
-  else if (filtroAtual === 'alerta') ts = ts.filter(t => t.score >= 6 && t.score < 8);
-  else if (filtroAtual === 'critico') ts = ts.filter(t => t.score < 6 && t.score > 0);
+  else if (filtroAtual === 'ok') ts = ts.filter(t => parseFloat(t.score) >= 8);
+  else if (filtroAtual === 'alerta') ts = ts.filter(t => parseFloat(t.score) >= 6 && parseFloat(t.score) < 8);
+  else if (filtroAtual === 'critico') ts = ts.filter(t => parseFloat(t.score) > 0 && parseFloat(t.score) < 6);
 
-  const grid = document.getElementById('transp-grid');
+  const grid    = document.getElementById('transp-grid');
+  const isAdmin = usuario.perfil === 'admin';
 
   if (!ts.length) {
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted);font-weight:600">
@@ -304,20 +394,20 @@ function renderTransp() {
     return;
   }
 
-  grid.innerHTML = ts.map(t => {
-    const sc = parseFloat(t.score) || 0;
-    const cor = scoreColor(sc);
+  grid.innerHTML = ts.map((t, i) => {
+    const sc     = parseFloat(t.score) || 0;
+    const cor    = scoreColor(sc);
     const ultimo = t.historico_pet?.[0];
     return `
-    <div class="transp-card">
+    <div class="transp-card" style="animation-delay:${i*0.05}s">
       <div class="transp-header">
         <div>
           <div class="transp-nome">${t.nome} ${t.sigla ? `<span style="color:var(--text-muted);font-size:12px">(${t.sigla})</span>` : ''}</div>
-          <div class="transp-regiao">${FLAGS[t.pais]||''} ${t.regiao || t.pais} ${t.ocorrencias_abertas > 0 ? `· <span style="color:var(--red)">⚠️ ${t.ocorrencias_abertas} oc.</span>` : ''}</div>
+          <div class="transp-regiao">${FLAGS[t.pais]||''} ${t.regiao || t.pais}</div>
         </div>
         <div class="score-circle" style="border-color:${cor};background:${cor}18">
           <div class="score-num" style="color:${cor}">${sc > 0 ? sc.toFixed(1) : '—'}</div>
-          <div class="score-txt" style="color:${cor}">${sc > 0 ? scoreLabel(sc).toUpperCase() : 'SEM PET'}</div>
+          <div class="score-txt" style="color:${cor}">${sc > 0 ? scoreLabel(sc) : 'SEM PET'}</div>
         </div>
       </div>
       <div class="transp-body">
@@ -340,69 +430,93 @@ function renderTransp() {
           </div>
         </div>` : `<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;font-weight:600">Sem avaliação PET registrada</div>`}
         <div class="transp-actions">
-          <button class="btn-sm" onclick="registrarPetParaTransp('${t.id}', '${t.nome}')">📊 PET</button>
-          <button class="btn-sm" onclick="window.location='/ocorrencias.html?transp=${t.id}'">⚠️ Oc.</button>
-          <button class="btn-sm" onclick="editarTransp(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏️ Editar</button>
-          ${isAdmin() ? `<button class="btn-sm danger" onclick="deletarTransp('${t.id}', '${t.nome.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
+          <button class="btn-sm" onclick="abrirPetParaTransp('${t.id}')">📊 PET</button>
+          <button class="btn-sm" onclick="window.location='/ocorrencias.html'">⚠️ Oc.</button>
+          <button class="btn-sm" onclick="editarTransp(${JSON.stringify(t).replace(/"/g,'&quot;')})">✏️</button>
+          ${isAdmin ? `<button class="btn-sm btn-sm-danger" onclick="desativarTransp('${t.id}','${t.nome.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
+// ─── PET ──────────────────────────────────────────────
 function togglePetPanel() { document.getElementById('pet-panel').classList.toggle('aberto'); }
 
-function registrarPetParaTransp(id, nome) {
+function abrirPetParaTransp(id) {
   document.getElementById('pet-transp').value = id;
   document.getElementById('pet-panel').classList.add('aberto');
-  document.getElementById('pet-panel').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('pet-panel').scrollIntoView({ behavior:'smooth' });
 }
 
 function calcularPreview() {
-  const otd = parseFloat(document.getElementById('pet-otd').value) || 0;
+  const otd    = parseFloat(document.getElementById('pet-otd').value) || 0;
   const atraso = parseFloat(document.getElementById('pet-atraso').value) || 0;
-  const oc = parseFloat(document.getElementById('pet-oc').value) || 0;
-  const sat = parseFloat(document.getElementById('pet-sat').value) || 0;
+  const oc     = parseFloat(document.getElementById('pet-oc').value) || 0;
+  const sat    = parseFloat(document.getElementById('pet-sat').value) || 0;
   if (!otd) { document.getElementById('score-preview').textContent = '— / 10'; return; }
-  const scoreOtd = Math.min(10, (otd / 95) * 10) * 0.4;
-  let scoreAtraso = 0;
-  if (atraso <= 2) scoreAtraso = 10 * 0.3;
-  else if (atraso <= 4) scoreAtraso = (1 - ((atraso - 2) / 8)) * 10 * 0.3;
-  const scoreOc = oc <= 5 ? 10 * 0.2 : Math.max(0, (1 - ((oc - 5) / 15)) * 10) * 0.2;
-  const scoreSat = (sat / 10) * 10 * 0.1;
-  const total = Math.round((scoreOtd + scoreAtraso + scoreOc + scoreSat) * 10) / 10;
-  const cor = scoreColor(total);
-  const el = document.getElementById('score-preview');
+  const sOtd   = Math.min(10, (otd/95)*10) * 0.4;
+  let sAtraso  = 0;
+  if (atraso <= 2) sAtraso = 10*0.3;
+  else if (atraso <= 4) sAtraso = (1-((atraso-2)/8))*10*0.3;
+  const sOc    = oc <= 5 ? 10*0.2 : Math.max(0,(1-((oc-5)/15))*10)*0.2;
+  const sSat   = (sat/10)*10*0.1;
+  const total  = Math.round((sOtd+sAtraso+sOc+sSat)*10)/10;
+  const cor    = scoreColor(total);
+  const el     = document.getElementById('score-preview');
   el.style.color = cor; el.style.borderColor = cor;
   el.textContent = `${total.toFixed(1)} / 10 — ${scoreLabel(total)}`;
 }
 
 async function salvarPet() {
-  const body = {
-    periodo_inicio: document.getElementById('pet-inicio').value,
-    periodo_fim: document.getElementById('pet-fim').value,
-    otd: parseFloat(document.getElementById('pet-otd').value) || 0,
-    atraso_medio: parseFloat(document.getElementById('pet-atraso').value) || 0,
-    ocorrencias_mil: parseFloat(document.getElementById('pet-oc').value) || 0,
-    satisfacao: parseFloat(document.getElementById('pet-sat').value) || 0,
-    total_viagens: parseInt(document.getElementById('pet-viagens').value) || 0,
-    notas: document.getElementById('pet-notas').value
-  };
   const transpId = document.getElementById('pet-transp').value;
-  if (!transpId || !body.periodo_inicio || !body.periodo_fim) { alert('Transportadora e período são obrigatórios'); return; }
-  const res = await apiPost(`/api/transportadoras/${transpId}/pet`, body);
-  if (res) { toast('Avaliação PET salva!', 'success'); togglePetPanel(); carregarTransp(); }
+  const inicio   = document.getElementById('pet-inicio').value;
+  const fim      = document.getElementById('pet-fim').value;
+  if (!transpId || !inicio || !fim) { alert('Transportadora e período são obrigatórios'); return; }
+
+  const body = {
+    periodo_inicio:   inicio,
+    periodo_fim:      fim,
+    otd:              parseFloat(document.getElementById('pet-otd').value) || 0,
+    atraso_medio:     parseFloat(document.getElementById('pet-atraso').value) || 0,
+    ocorrencias_mil:  parseFloat(document.getElementById('pet-oc').value) || 0,
+    satisfacao:       parseFloat(document.getElementById('pet-sat').value) || 0,
+    total_viagens:    parseInt(document.getElementById('pet-viagens').value) || 0,
+    notas:            document.getElementById('pet-notas').value
+  };
+
+  const btn = document.getElementById('btn-salvar-pet');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(`/api/transportadoras/${transpId}/pet`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro || 'Erro ao salvar PET'); btn.disabled=false; btn.textContent='💾 Salvar Avaliação PET'; return; }
+    toast('Avaliação PET salva! ✅', 'success');
+    togglePetPanel();
+    carregarTransp();
+  } catch (e) {
+    alert('Erro de conexão. Tente novamente.');
+  }
+  btn.disabled = false; btn.textContent = '💾 Salvar Avaliação PET';
 }
 
+// ─── MODAL TRANSPORTADORA ─────────────────────────────
 function abrirModalTransp(t = null) {
-  document.getElementById('transp-id').value = t?.id || '';
-  document.getElementById('transp-nome').value = t?.nome || '';
-  document.getElementById('transp-sigla').value = t?.sigla || '';
-  document.getElementById('transp-pais').value = t?.pais || 'BR';
-  document.getElementById('transp-regiao').value = t?.regiao || '';
+  document.getElementById('transp-id').value      = t?.id || '';
+  document.getElementById('transp-nome').value    = t?.nome || '';
+  document.getElementById('transp-sigla').value   = t?.sigla || '';
+  document.getElementById('transp-pais').value    = t?.pais || 'BR';
+  document.getElementById('transp-regiao').value  = t?.regiao || '';
   document.getElementById('transp-contato').value = t?.contato || '';
-  document.getElementById('transp-email').value = t?.email || '';
-  document.getElementById('modal-titulo').textContent = t ? 'Editar Transportadora' : 'Nova Transportadora';
+  document.getElementById('transp-email').value   = t?.email || '';
+  document.getElementById('modal-titulo').textContent       = t ? 'Editar Transportadora' : 'Nova Transportadora';
+  document.getElementById('btn-salvar-transp').textContent  = 'Salvar';
+  document.getElementById('btn-salvar-transp').disabled     = false;
   document.getElementById('modal-transp').classList.add('aberto');
 }
 
@@ -410,26 +524,50 @@ function editarTransp(t) { abrirModalTransp(t); }
 function fecharModal() { document.getElementById('modal-transp').classList.remove('aberto'); }
 
 async function salvarTransp() {
-  const id = document.getElementById('transp-id').value;
+  const nome = document.getElementById('transp-nome').value.trim();
+  if (!nome) { alert('Nome é obrigatório'); return; }
+
+  const id   = document.getElementById('transp-id').value;
   const body = {
-    nome: document.getElementById('transp-nome').value.trim(),
-    sigla: document.getElementById('transp-sigla').value.trim(),
-    pais: document.getElementById('transp-pais').value,
-    regiao: document.getElementById('transp-regiao').value.trim(),
+    nome,
+    sigla:   document.getElementById('transp-sigla').value.trim(),
+    pais:    document.getElementById('transp-pais').value,
+    regiao:  document.getElementById('transp-regiao').value.trim(),
     contato: document.getElementById('transp-contato').value.trim(),
-    email: document.getElementById('transp-email').value.trim()
+    email:   document.getElementById('transp-email').value.trim()
   };
-  if (!body.nome) { alert('Nome é obrigatório'); return; }
-  const url = id ? `/api/transportadoras/${id}` : '/api/transportadoras';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiPost(url, body, method);
-  if (res) { fecharModal(); carregarTransp(); toast('Transportadora salva!', 'success'); }
+
+  const btn = document.getElementById('btn-salvar-transp');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(id ? `/api/transportadoras/${id}` : '/api/transportadoras', {
+      method:  id ? 'PUT' : 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body:    JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro || 'Erro ao salvar'); btn.disabled=false; btn.textContent='Salvar'; return; }
+    fecharModal();
+    toast(id ? 'Transportadora atualizada! ✅' : 'Transportadora criada! ✅', 'success');
+    carregarTransp();
+  } catch (e) {
+    alert('Erro de conexão. Tente novamente.');
+    btn.disabled = false; btn.textContent = 'Salvar';
+  }
 }
 
-async function deletarTransp(id, nome) {
-  if (!confirm(`Excluir a transportadora "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
-  const res = await apiDelete(`/api/transportadoras/${id}`);
-  if (res) { toast('Transportadora excluída', 'success'); carregarTransp(); }
+async function desativarTransp(id, nome) {
+  if (!confirm(`Desativar a transportadora "${nome}"?\n\nO histórico PET será preservado.`)) return;
+  try {
+    const res = await fetch(`/api/transportadoras/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ ativa: false })
+    });
+    if (res.ok) { toast('Transportadora desativada.', 'success'); carregarTransp(); }
+    else { alert('Erro ao desativar.'); }
+  } catch (e) { alert('Erro de conexão.'); }
 }
 
 carregarTransp();
