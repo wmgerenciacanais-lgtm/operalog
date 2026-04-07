@@ -5,95 +5,224 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OperaLog — Operações IN HOUSE</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
 <style>
-  .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+:root {
+  --bg: #060A0F;
+  --surface: #0D1420;
+  --surface2: #111B2E;
+  --border: rgba(255,255,255,0.08);
+  --green: #00C88C;
+  --green-dim: rgba(0,200,140,0.15);
+  --amber: #F5C842;
+  --amber-dim: rgba(245,200,66,0.15);
+  --blue: #4A9EFF;
+  --blue-dim: rgba(74,158,255,0.15);
+  --red: #FF4D6A;
+  --red-dim: rgba(255,77,106,0.15);
+  --text: #FFFFFF;
+  --text-muted: #A0AEC0;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
 
-  .filtro-btn {
-    padding: 7px 16px; border-radius: 20px;
-    font-size: 13px; font-weight: 700;
-    cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  .filtro-btn.ativo { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .filtro-btn:hover { border-color: var(--green); }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  .ops-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 16px;
-  }
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,200,140,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,140,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
 
-  .op-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden;
-    transition: all 0.2s;
-    animation: fadeUp 0.3s ease both;
-  }
+/* TOPBAR */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 62px;
+  background: rgba(6,10,15,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
 
-  .op-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 34px; height: 34px; background: var(--green);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 14px; color: #000;
+}
+.logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text); }
+.logo-text span { color: var(--green); }
 
-  .op-card-header {
-    padding: 16px 18px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: flex-start;
-  }
+.topbar-center {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 14px;
+}
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,140,0.4);} 50%{box-shadow:0 0 0 5px transparent;} }
+.topbar-center span { font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text); letter-spacing:0.5px; }
 
-  .op-cliente {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 800;
-    color: var(--text); margin-bottom: 3px;
-  }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.clock { font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text); text-align:right; }
+.clock-date { font-size:10px; color:var(--text-muted); font-weight:500; }
 
-  .op-local { font-size: 12px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
+.user-menu {
+  display:flex; align-items:center; gap:10px; padding:6px 12px;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; cursor:pointer; transition:border-color 0.15s;
+}
+.user-menu:hover { border-color:var(--green); }
+.user-avatar {
+  width:30px; height:30px; border-radius:50%;
+  background:linear-gradient(135deg,var(--green),var(--blue));
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:#000; font-family:var(--font-display);
+}
+.user-name { font-size:13px; font-weight:700; color:var(--text); }
 
-  .op-body { padding: 14px 18px; }
+/* LAYOUT */
+.layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 62px); position:relative; z-index:1; }
 
-  .op-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+/* SIDEBAR */
+.sidebar {
+  border-right:1px solid var(--border); padding:20px 12px;
+  background:rgba(13,20,32,0.6); display:flex; flex-direction:column; gap:2px;
+}
+.sidebar-section {
+  font-family:var(--font-mono); font-size:10px; font-weight:500;
+  color:var(--text-muted); letter-spacing:2px; text-transform:uppercase; padding:14px 12px 6px;
+}
+.nav-item {
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px;
+  cursor:pointer; transition:all 0.15s; font-size:14px; font-weight:600;
+  color:var(--text-muted); text-decoration:none;
+}
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.ativo { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,200,140,0.25); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-wpp {
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px;
+  cursor:pointer; font-size:14px; font-weight:800; color:#fff; text-decoration:none;
+  background:linear-gradient(135deg,#128C7E,#25D366); margin-top:8px;
+  box-shadow:0 2px 12px rgba(37,211,102,0.25); transition:all 0.15s;
+}
+.nav-wpp:hover { background:linear-gradient(135deg,#075E54,#128C7E); transform:translateY(-1px); }
 
-  .op-stat { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+/* MAIN */
+.main { padding:24px 28px; overflow-y:auto; }
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+.page-title { font-family:var(--font-display); font-size:26px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+.page-sub { font-size:13px; font-weight:500; color:var(--text-muted); margin-top:3px; }
 
-  .op-stat-label {
-    font-size: 10px; font-weight: 700; color: var(--text);
-    text-transform: uppercase; letter-spacing: 1px;
-    font-family: var(--font-mono); margin-bottom: 4px;
-  }
+/* BUTTONS */
+.btn { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:var(--font-body); transition:all 0.15s; }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:var(--green); color:var(--green); }
+.btn-primary { background:var(--green); color:#000; font-weight:800; }
+.btn-primary:hover { background:#00e6a3; box-shadow:0 0 20px rgba(0,200,140,0.35); }
+.btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
 
-  .op-stat-value { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text); }
+/* FILTROS */
+.filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.filtro-btn {
+  padding:7px 16px; border-radius:20px; font-size:13px; font-weight:700;
+  cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+  color:var(--text); font-family:var(--font-body); transition:all 0.15s;
+}
+.filtro-btn.ativo { background:var(--green-dim); border-color:var(--green); color:var(--green); }
+.filtro-btn:hover { border-color:var(--green); }
 
-  .op-servicos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+/* GRID */
+.ops-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
 
-  .servico-tag {
-    padding: 3px 10px; border-radius: 4px;
-    font-size: 11px; font-weight: 700;
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--font-mono);
-  }
+/* CARD */
+.op-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  overflow:hidden; transition:all 0.2s; animation:fadeUp 0.3s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+.op-card:hover { border-color:rgba(255,255,255,0.15); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
 
-  .op-actions {
-    display: flex; gap: 8px; padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
+.op-card-header { padding:16px 18px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; }
+.op-cliente { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text); margin-bottom:3px; }
+.op-local { font-size:12px; font-weight:600; color:var(--text-muted); font-family:var(--font-mono); }
 
-  .btn-sm {
-    padding: 6px 14px; border-radius: 6px;
-    font-size: 12px; font-weight: 700;
-    cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s; flex: 1;
-  }
+.op-body { padding:14px 18px; }
+.op-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.op-stat { background:var(--surface2); border-radius:8px; padding:10px 12px; }
+.op-stat-label { font-size:10px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:1px; font-family:var(--font-mono); margin-bottom:4px; }
+.op-stat-value { font-family:var(--font-display); font-size:20px; font-weight:800; }
 
-  .btn-sm:hover { border-color: var(--green); color: var(--green); }
-  .btn-sm-danger { background: var(--red-dim) !important; color: var(--red) !important; border-color: rgba(255,77,106,0.3) !important; flex: 0 !important; }
-  .btn-sm-danger:hover { background: var(--red) !important; color: #fff !important; }
+.op-servicos { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.servico-tag { padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); grid-column: 1/-1; }
-  .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
-  .empty-sub { font-size: 14px; font-weight: 500; }
+.op-actions { display:flex; gap:8px; padding-top:10px; border-top:1px solid var(--border); }
+.btn-sm { padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:var(--font-body); transition:all 0.15s; flex:1; }
+.btn-sm:hover { border-color:var(--green); color:var(--green); }
+.btn-sm-danger { background:var(--red-dim) !important; color:var(--red) !important; border-color:rgba(255,77,106,0.3) !important; flex:0 !important; }
+
+/* STATUS */
+.status-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; font-family:var(--font-mono); }
+.status-ativo { background:var(--green-dim); color:var(--green); }
+.status-alerta { background:var(--amber-dim); color:var(--amber); }
+.status-critico { background:var(--red-dim); color:var(--red); }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.aberto { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; animation:fadeUp 0.2s ease; }
+.modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.modal-title { font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--text); }
+.modal-close { width:32px; height:32px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+
+/* FORM */
+.form-group { margin-bottom:16px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-label { display:block; font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.form-input, .form-select, .form-textarea {
+  width:100%; padding:11px 14px; background:rgba(255,255,255,0.05);
+  border:1px solid var(--border); border-radius:8px; color:var(--text);
+  font-family:var(--font-body); font-size:14px; font-weight:500; outline:none; transition:all 0.15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--green); background:rgba(0,200,140,0.05); box-shadow:0 0 0 3px rgba(0,200,140,0.1); }
+.form-input::placeholder { color:rgba(255,255,255,0.2); }
+.form-select option { background:var(--surface); color:var(--text); }
+.form-textarea { resize:vertical; min-height:80px; }
+
+/* MISC */
+.loading { display:flex; align-items:center; justify-content:center; padding:40px; color:var(--text-muted); font-size:14px; font-weight:600; }
+.empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); grid-column:1/-1; }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+.empty-title { font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--text); margin-bottom:6px; }
+
+/* TOAST */
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast {
+  background:var(--surface); border-radius:10px; padding:14px 20px;
+  font-family:var(--font-body); font-size:14px; font-weight:700; color:var(--text);
+  box-shadow:0 8px 24px rgba(0,0,0,0.3); animation:fadeUp 0.2s ease;
+  max-width:320px; border-left:4px solid var(--green);
+}
+.toast.error { border-left-color:var(--red); }
+.toast.warning { border-left-color:var(--amber); }
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 </style>
 </head>
 <body>
@@ -108,7 +237,10 @@
     <span>PRODUSLOG · OPERAÇÕES IN HOUSE</span>
   </div>
   <div class="topbar-right">
-    <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
+    <div class="clock">
+      <div id="clock-time">--:--:--</div>
+      <div class="clock-date" id="clock-date">---</div>
+    </div>
     <div class="user-menu" onclick="logout()">
       <div class="user-avatar" id="user-initials">?</div>
       <span class="user-name" id="user-name">Usuário</span>
@@ -127,7 +259,7 @@
     <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
     <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
     <div class="sidebar-section">COMUNICAÇÃO</div>
-    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-item" style="background:linear-gradient(135deg,#128C7E,#25D366);color:#fff;font-weight:800">
+    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-wpp">
       <span class="nav-icon">💬</span> OperaLog Board
     </a>
   </aside>
@@ -142,13 +274,13 @@
     </div>
 
     <div class="filtros">
-      <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
-      <button class="filtro-btn" onclick="filtrar('BR', this)">🇧🇷 Brasil</button>
-      <button class="filtro-btn" onclick="filtrar('AR', this)">🇦🇷 Argentina</button>
-      <button class="filtro-btn" onclick="filtrar('PT', this)">🇵🇹 Portugal</button>
-      <button class="filtro-btn" onclick="filtrar('ativo', this)">✅ Ativos</button>
-      <button class="filtro-btn" onclick="filtrar('alerta', this)">⚠️ Alerta</button>
-      <button class="filtro-btn" onclick="filtrar('critico', this)">🔴 Críticos</button>
+      <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('BR',this)">🇧🇷 Brasil</button>
+      <button class="filtro-btn" onclick="filtrar('AR',this)">🇦🇷 Argentina</button>
+      <button class="filtro-btn" onclick="filtrar('PT',this)">🇵🇹 Portugal</button>
+      <button class="filtro-btn" onclick="filtrar('ativo',this)">✅ Ativos</button>
+      <button class="filtro-btn" onclick="filtrar('alerta',this)">⚠️ Alerta</button>
+      <button class="filtro-btn" onclick="filtrar('critico',this)">🔴 Críticos</button>
     </div>
 
     <div class="ops-grid" id="ops-grid">
@@ -157,7 +289,7 @@
   </main>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL NOVA/EDITAR -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-header">
@@ -214,7 +346,7 @@
   </div>
 </div>
 
-<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<!-- MODAL EXCLUIR -->
 <div class="modal-overlay" id="modal-excluir">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -224,8 +356,7 @@
     <div class="modal-body">
       <p style="font-size:14px;color:var(--text);font-weight:500;line-height:1.6">
         Tem certeza que deseja encerrar a operação <strong id="nome-excluir" style="color:var(--red)"></strong>?
-        <br><br>
-        O registro será arquivado e o histórico preservado.
+        <br><br>O registro será arquivado e o histórico preservado.
       </p>
       <input type="hidden" id="id-excluir">
     </div>
@@ -236,18 +367,61 @@
   </div>
 </div>
 
-<script src="/shared.js"></script>
+<div class="toast-container" id="toast-container"></div>
+
 <script>
-let todasOps = [];
+// ─── SETUP ────────────────────────────────────────────
+const token   = localStorage.getItem('operalog_token');
+const usuario = JSON.parse(localStorage.getItem('operalog_usuario') || '{}');
+
+if (!token) { window.location.href = '/'; }
+
+document.getElementById('user-name').textContent = usuario.nome || 'Usuário';
+document.getElementById('user-initials').textContent =
+  (usuario.nome || 'U').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+function logout() {
+  localStorage.removeItem('operalog_token');
+  localStorage.removeItem('operalog_usuario');
+  window.location.href = '/';
+}
+
+function toast(msg, tipo = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (tipo === 'error' ? ' error' : tipo === 'warning' ? ' warning' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ─── DADOS ────────────────────────────────────────────
+let todasOps   = [];
 let filtroAtual = 'todos';
 
-const PAIS_FLAG  = { BR:'🇧🇷', AR:'🇦🇷', PT:'🇵🇹' };
+const PAIS_FLAG   = { BR:'🇧🇷', AR:'🇦🇷', PT:'🇵🇹' };
 const STATUS_CLASS = { ativo:'status-ativo', alerta:'status-alerta', critico:'status-critico' };
 const STATUS_LABEL = { ativo:'● Ativo', alerta:'● Alerta', critico:'● Crítico' };
 
 async function carregarOperacoes() {
-  todasOps = await api('/api/operacoes') || [];
-  renderOps();
+  try {
+    const res = await fetch('/api/operacoes', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.status === 401) { logout(); return; }
+    todasOps = await res.json();
+    renderOps();
+  } catch (e) {
+    document.getElementById('ops-grid').innerHTML =
+      '<div class="loading">Erro ao carregar. Verifique sua conexão.</div>';
+  }
 }
 
 function filtrar(tipo, btn) {
@@ -259,22 +433,23 @@ function filtrar(tipo, btn) {
 
 function renderOps() {
   let ops = todasOps;
-  if (['BR','AR','PT'].includes(filtroAtual)) ops = ops.filter(o => o.pais === filtroAtual);
-  else if (['ativo','alerta','critico'].includes(filtroAtual)) ops = ops.filter(o => o.status === filtroAtual);
+  if (['BR','AR','PT'].includes(filtroAtual))
+    ops = ops.filter(o => o.pais === filtroAtual);
+  else if (['ativo','alerta','critico'].includes(filtroAtual))
+    ops = ops.filter(o => o.status === filtroAtual);
 
-  const grid = document.getElementById('ops-grid');
+  const grid    = document.getElementById('ops-grid');
+  const isAdmin = usuario.perfil === 'admin';
 
   if (!ops.length) {
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">📦</div>
         <div class="empty-title">Nenhuma operação encontrada</div>
-        <div class="empty-sub">Clique em "+ Nova Operação" para adicionar</div>
+        <div style="font-size:14px;font-weight:500">Clique em "+ Nova Operação" para adicionar</div>
       </div>`;
     return;
   }
-
-  const isAdmin = usuario.perfil === 'admin';
 
   grid.innerHTML = ops.map((op, i) => `
     <div class="op-card" style="animation-delay:${i*0.05}s">
@@ -295,7 +470,7 @@ function renderOps() {
           </div>
           <div class="op-stat">
             <div class="op-stat-label">🔴 Ocorrências</div>
-            <div class="op-stat-value" style="color:${op.ocorrencias_abertas > 0 ? 'var(--red)' : 'var(--green)'}">
+            <div class="op-stat-value" style="color:${(op.ocorrencias_abertas||0) > 0 ? 'var(--red)' : 'var(--green)'}">
               ${op.ocorrencias_abertas || 0}
             </div>
           </div>
@@ -304,43 +479,44 @@ function renderOps() {
           ${(op.servicos||[]).map(s => `<span class="servico-tag">${s}</span>`).join('')}
         </div>
         <div class="op-actions">
-          <button class="btn-sm" onclick="editarOp('${op.id}','${op.cliente}','${op.local}','${op.pais}',${op.equipe_qtd},'${(op.servicos||[]).join(',')}','${op.status}','${op.notas||''}')">✏️ Editar</button>
+          <button class="btn-sm" onclick="editarOp(${JSON.stringify(op).replace(/"/g,'&quot;')})">✏️ Editar</button>
           <button class="btn-sm" onclick="window.location='/ocorrencias.html'">📋 Ocorrências</button>
           <button class="btn-sm" onclick="window.location='/pdca.html'">📊 PDCA</button>
-          ${isAdmin ? `<button class="btn-sm btn-sm-danger" onclick="abrirExcluir('${op.id}','${op.cliente}')">🗑️</button>` : ''}
+          ${isAdmin ? `<button class="btn-sm btn-sm-danger" onclick="abrirExcluir('${op.id}','${op.cliente.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
         </div>
       </div>
     </div>
   `).join('');
 }
 
+// ─── MODAL ────────────────────────────────────────────
 function abrirModal() {
-  document.getElementById('op-id').value = '';
+  document.getElementById('op-id').value      = '';
   document.getElementById('op-cliente').value = '';
-  document.getElementById('op-local').value = '';
-  document.getElementById('op-pais').value = 'BR';
-  document.getElementById('op-equipe').value = '';
-  document.getElementById('op-servicos').value = '';
-  document.getElementById('op-status').value = 'ativo';
-  document.getElementById('op-notas').value = '';
-  document.getElementById('modal-titulo').textContent = 'Nova Operação';
-  document.getElementById('btn-salvar').textContent = 'Salvar';
-  document.getElementById('btn-salvar').disabled = false;
+  document.getElementById('op-local').value   = '';
+  document.getElementById('op-pais').value    = 'BR';
+  document.getElementById('op-equipe').value  = '';
+  document.getElementById('op-servicos').value= '';
+  document.getElementById('op-status').value  = 'ativo';
+  document.getElementById('op-notas').value   = '';
+  document.getElementById('modal-titulo').textContent  = 'Nova Operação';
+  document.getElementById('btn-salvar').textContent    = 'Salvar';
+  document.getElementById('btn-salvar').disabled       = false;
   document.getElementById('modal').classList.add('aberto');
 }
 
-function editarOp(id, cliente, local, pais, equipe, servicos, status, notas) {
-  document.getElementById('op-id').value = id;
-  document.getElementById('op-cliente').value = cliente;
-  document.getElementById('op-local').value = local;
-  document.getElementById('op-pais').value = pais;
-  document.getElementById('op-equipe').value = equipe;
-  document.getElementById('op-servicos').value = servicos;
-  document.getElementById('op-status').value = status;
-  document.getElementById('op-notas').value = notas;
-  document.getElementById('modal-titulo').textContent = 'Editar Operação';
-  document.getElementById('btn-salvar').textContent = 'Salvar';
-  document.getElementById('btn-salvar').disabled = false;
+function editarOp(op) {
+  document.getElementById('op-id').value      = op.id;
+  document.getElementById('op-cliente').value = op.cliente;
+  document.getElementById('op-local').value   = op.local;
+  document.getElementById('op-pais').value    = op.pais;
+  document.getElementById('op-equipe').value  = op.equipe_qtd;
+  document.getElementById('op-servicos').value= (op.servicos||[]).join(', ');
+  document.getElementById('op-status').value  = op.status;
+  document.getElementById('op-notas').value   = op.notas || '';
+  document.getElementById('modal-titulo').textContent  = 'Editar Operação';
+  document.getElementById('btn-salvar').textContent    = 'Salvar';
+  document.getElementById('btn-salvar').disabled       = false;
   document.getElementById('modal').classList.add('aberto');
 }
 
@@ -351,10 +527,7 @@ function fecharModal() {
 async function salvarOperacao() {
   const cliente = document.getElementById('op-cliente').value.trim();
   const local   = document.getElementById('op-local').value.trim();
-
-  if (!cliente || !local) {
-    alert('Cliente e local são obrigatórios'); return;
-  }
+  if (!cliente || !local) { alert('Cliente e local são obrigatórios'); return; }
 
   const id   = document.getElementById('op-id').value;
   const body = {
@@ -372,37 +545,28 @@ async function salvarOperacao() {
   btn.textContent = 'Salvando...';
 
   try {
-    const url    = id ? `/api/operacoes/${id}` : '/api/operacoes';
-    const method = id ? 'PUT' : 'POST';
-    const res    = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify(body)
+    const res = await fetch(id ? `/api/operacoes/${id}` : '/api/operacoes', {
+      method:  id ? 'PUT' : 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body:    JSON.stringify(body)
     });
 
     const data = await res.json();
-
     if (!res.ok) {
-      alert(data.erro || 'Erro ao salvar operação');
-      btn.disabled = false;
-      btn.textContent = 'Salvar';
+      alert(data.erro || 'Erro ao salvar');
+      btn.disabled = false; btn.textContent = 'Salvar';
       return;
     }
-
     fecharModal();
-    toast(id ? 'Operação atualizada!' : 'Operação criada!', 'success');
+    toast(id ? 'Operação atualizada! ✅' : 'Operação criada! ✅', 'success');
     carregarOperacoes();
-
-  } catch (err) {
-    alert('Erro de conexão. Verifique sua internet.');
-    btn.disabled = false;
-    btn.textContent = 'Salvar';
+  } catch (e) {
+    alert('Erro de conexão. Tente novamente.');
+    btn.disabled = false; btn.textContent = 'Salvar';
   }
 }
 
+// ─── EXCLUIR ──────────────────────────────────────────
 function abrirExcluir(id, nome) {
   document.getElementById('id-excluir').value = id;
   document.getElementById('nome-excluir').textContent = nome;
@@ -427,11 +591,12 @@ async function confirmarExcluir() {
     } else {
       alert('Erro ao encerrar operação.');
     }
-  } catch (err) {
+  } catch (e) {
     alert('Erro de conexão.');
   }
 }
 
+// ─── INIT ─────────────────────────────────────────────
 carregarOperacoes();
 </script>
 </body>
