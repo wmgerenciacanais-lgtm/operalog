@@ -30,7 +30,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px; overflow: hidden;
-    transition: all 0.2s; cursor: pointer;
+    transition: all 0.2s;
     animation: fadeUp 0.3s ease both;
   }
 
@@ -75,89 +75,20 @@
 
   .op-actions {
     display: flex; gap: 8px; padding-top: 10px;
-    border-top: 1px solid var(--border); flex-wrap: wrap;
+    border-top: 1px solid var(--border);
   }
 
   .btn-sm {
     padding: 6px 14px; border-radius: 6px;
     font-size: 12px; font-weight: 700;
-    cursor: pointer; border: none;
-    font-family: var(--font-body); transition: all 0.15s;
-  }
-
-  .btn-sm-ghost {
+    cursor: pointer; border: 1px solid var(--border);
     background: var(--surface2); color: var(--text);
-    border: 1px solid var(--border); flex: 1;
+    font-family: var(--font-body); transition: all 0.15s; flex: 1;
   }
 
-  .btn-sm-ghost:hover { border-color: var(--green); color: var(--green); }
-
-  .btn-sm-danger {
-    background: var(--red-dim); color: var(--red);
-    border: 1px solid rgba(255,77,106,0.3);
-  }
-
-  .btn-sm-danger:hover { background: rgba(255,77,106,0.25); }
-
-  .modal-overlay {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px; display: none;
-  }
-
-  .modal-overlay.aberto { display: flex; }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px; width: 100%; max-width: 520px;
-    max-height: 90vh; overflow-y: auto;
-    animation: fadeUp 0.2s ease;
-  }
-
-  .modal-header {
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-
-  .modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); }
-
-  .modal-close {
-    width: 32px; height: 32px; border-radius: 8px;
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); font-size: 18px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  .modal-body { padding: 24px; }
-
-  .form-group { margin-bottom: 16px; }
-
-  .form-label { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-
-  .form-input, .form-select, .form-textarea {
-    width: 100%; padding: 11px 14px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-family: var(--font-body);
-    font-size: 14px; font-weight: 500; outline: none; transition: all 0.15s;
-  }
-
-  .form-input:focus, .form-select:focus, .form-textarea:focus {
-    border-color: var(--green); background: rgba(0,200,140,0.05);
-  }
-
-  .form-select option { background: var(--surface); color: var(--text); }
-  .form-textarea { resize: vertical; min-height: 80px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  .modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--border);
-    display: flex; gap: 10px; justify-content: flex-end;
-  }
+  .btn-sm:hover { border-color: var(--green); color: var(--green); }
+  .btn-sm-danger { background: var(--red-dim) !important; color: var(--red) !important; border-color: rgba(255,77,106,0.3) !important; flex: 0 !important; }
+  .btn-sm-danger:hover { background: var(--red) !important; color: #fff !important; }
 
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); grid-column: 1/-1; }
   .empty-icon { font-size: 48px; margin-bottom: 12px; }
@@ -195,13 +126,17 @@
     <div class="sidebar-section">GESTÃO</div>
     <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
     <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
+    <div class="sidebar-section">COMUNICAÇÃO</div>
+    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-item" style="background:linear-gradient(135deg,#128C7E,#25D366);color:#fff;font-weight:800">
+      <span class="nav-icon">💬</span> OperaLog Board
+    </a>
   </aside>
 
   <main class="main">
     <div class="page-header">
       <div>
         <div class="page-title">Operações IN HOUSE</div>
-        <div class="page-sub">Gestão de equipes e operações por cliente</div>
+        <div class="page-sub">Gestão de equipes e operações por cliente e país</div>
       </div>
       <button class="btn btn-primary" onclick="abrirModal()">+ Nova Operação</button>
     </div>
@@ -222,7 +157,7 @@
   </main>
 </div>
 
-<!-- MODAL NOVA/EDITAR OPERAÇÃO -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-header">
@@ -274,7 +209,29 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarOperacao()" id="btn-salvar">Salvar</button>
+      <button class="btn btn-primary" id="btn-salvar" onclick="salvarOperacao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div class="modal-overlay" id="modal-excluir">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--red)">⚠️ Confirmar Exclusão</div>
+      <button class="modal-close" onclick="fecharExcluir()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text);font-weight:500;line-height:1.6">
+        Tem certeza que deseja encerrar a operação <strong id="nome-excluir" style="color:var(--red)"></strong>?
+        <br><br>
+        O registro será arquivado e o histórico preservado.
+      </p>
+      <input type="hidden" id="id-excluir">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharExcluir()">Cancelar</button>
+      <button class="btn" style="background:var(--red);color:#fff;font-weight:800" onclick="confirmarExcluir()">Sim, encerrar</button>
     </div>
   </div>
 </div>
@@ -284,9 +241,9 @@
 let todasOps = [];
 let filtroAtual = 'todos';
 
-const PAIS_FLAG = { BR: '🇧🇷', AR: '🇦🇷', PT: '🇵🇹' };
-const STATUS_CLASS = { ativo: 'status-ativo', alerta: 'status-alerta', critico: 'status-critico' };
-const STATUS_LABEL = { ativo: '● Ativo', alerta: '● Alerta', critico: '● Crítico' };
+const PAIS_FLAG  = { BR:'🇧🇷', AR:'🇦🇷', PT:'🇵🇹' };
+const STATUS_CLASS = { ativo:'status-ativo', alerta:'status-alerta', critico:'status-critico' };
+const STATUS_LABEL = { ativo:'● Ativo', alerta:'● Alerta', critico:'● Crítico' };
 
 async function carregarOperacoes() {
   todasOps = await api('/api/operacoes') || [];
@@ -317,15 +274,17 @@ function renderOps() {
     return;
   }
 
-  grid.innerHTML = ops.map(op => `
-    <div class="op-card">
+  const isAdmin = usuario.perfil === 'admin';
+
+  grid.innerHTML = ops.map((op, i) => `
+    <div class="op-card" style="animation-delay:${i*0.05}s">
       <div class="op-card-header">
         <div>
           <div class="op-cliente">${op.cliente}</div>
-          <div class="op-local">${PAIS_FLAG[op.pais] || ''} ${op.local}</div>
+          <div class="op-local">${PAIS_FLAG[op.pais]||''} ${op.local}</div>
         </div>
-        <span class="status-pill ${STATUS_CLASS[op.status] || 'status-ativo'}">
-          ${STATUS_LABEL[op.status] || op.status}
+        <span class="status-pill ${STATUS_CLASS[op.status]||'status-ativo'}">
+          ${STATUS_LABEL[op.status]||op.status}
         </span>
       </div>
       <div class="op-body">
@@ -342,64 +301,135 @@ function renderOps() {
           </div>
         </div>
         <div class="op-servicos">
-          ${(op.servicos || []).map(s => `<span class="servico-tag">${s}</span>`).join('')}
+          ${(op.servicos||[]).map(s => `<span class="servico-tag">${s}</span>`).join('')}
         </div>
         <div class="op-actions">
-          <button class="btn-sm btn-sm-ghost" onclick="editarOp(${JSON.stringify(op).replace(/"/g,'&quot;')})">✏️ Editar</button>
-          <button class="btn-sm btn-sm-ghost" onclick="window.location='/ocorrencias.html?op=${op.id}'">📋 Ocorrências</button>
-          <button class="btn-sm btn-sm-ghost" onclick="window.location='/pdca.html?op=${op.id}'">📊 PDCA</button>
-          ${isAdmin() ? `<button class="btn-sm btn-sm-danger" onclick="deletarOp('${op.id}', '${op.cliente.replace(/'/g,"\\'")}')">🗑️ Excluir</button>` : ''}
+          <button class="btn-sm" onclick="editarOp('${op.id}','${op.cliente}','${op.local}','${op.pais}',${op.equipe_qtd},'${(op.servicos||[]).join(',')}','${op.status}','${op.notas||''}')">✏️ Editar</button>
+          <button class="btn-sm" onclick="window.location='/ocorrencias.html'">📋 Ocorrências</button>
+          <button class="btn-sm" onclick="window.location='/pdca.html'">📊 PDCA</button>
+          ${isAdmin ? `<button class="btn-sm btn-sm-danger" onclick="abrirExcluir('${op.id}','${op.cliente}')">🗑️</button>` : ''}
         </div>
       </div>
     </div>
   `).join('');
 }
 
-function abrirModal(op = null) {
-  document.getElementById('op-id').value = op?.id || '';
-  document.getElementById('op-cliente').value = op?.cliente || '';
-  document.getElementById('op-local').value = op?.local || '';
-  document.getElementById('op-pais').value = op?.pais || 'BR';
-  document.getElementById('op-equipe').value = op?.equipe_qtd || '';
-  document.getElementById('op-servicos').value = (op?.servicos || []).join(', ');
-  document.getElementById('op-status').value = op?.status || 'ativo';
-  document.getElementById('op-notas').value = op?.notas || '';
-  document.getElementById('modal-titulo').textContent = op ? 'Editar Operação' : 'Nova Operação';
+function abrirModal() {
+  document.getElementById('op-id').value = '';
+  document.getElementById('op-cliente').value = '';
+  document.getElementById('op-local').value = '';
+  document.getElementById('op-pais').value = 'BR';
+  document.getElementById('op-equipe').value = '';
+  document.getElementById('op-servicos').value = '';
+  document.getElementById('op-status').value = 'ativo';
+  document.getElementById('op-notas').value = '';
+  document.getElementById('modal-titulo').textContent = 'Nova Operação';
+  document.getElementById('btn-salvar').textContent = 'Salvar';
+  document.getElementById('btn-salvar').disabled = false;
   document.getElementById('modal').classList.add('aberto');
 }
 
-function fecharModal() { document.getElementById('modal').classList.remove('aberto'); }
-function editarOp(op) { abrirModal(op); }
-
-async function salvarOperacao() {
-  const id = document.getElementById('op-id').value;
-  const body = {
-    cliente: document.getElementById('op-cliente').value.trim(),
-    local: document.getElementById('op-local').value.trim(),
-    pais: document.getElementById('op-pais').value,
-    equipe_qtd: parseInt(document.getElementById('op-equipe').value) || 0,
-    servicos: document.getElementById('op-servicos').value.split(',').map(s => s.trim()).filter(Boolean),
-    status: document.getElementById('op-status').value,
-    notas: document.getElementById('op-notas').value.trim()
-  };
-
-  if (!body.cliente || !body.local) { alert('Cliente e local são obrigatórios'); return; }
-
-  const btn = document.getElementById('btn-salvar');
-  btn.disabled = true; btn.textContent = '...';
-
-  const url = id ? `/api/operacoes/${id}` : '/api/operacoes';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiPost(url, body, method);
-  btn.disabled = false; btn.textContent = 'Salvar';
-
-  if (res) { fecharModal(); carregarOperacoes(); toast('Operação salva!', 'success'); }
+function editarOp(id, cliente, local, pais, equipe, servicos, status, notas) {
+  document.getElementById('op-id').value = id;
+  document.getElementById('op-cliente').value = cliente;
+  document.getElementById('op-local').value = local;
+  document.getElementById('op-pais').value = pais;
+  document.getElementById('op-equipe').value = equipe;
+  document.getElementById('op-servicos').value = servicos;
+  document.getElementById('op-status').value = status;
+  document.getElementById('op-notas').value = notas;
+  document.getElementById('modal-titulo').textContent = 'Editar Operação';
+  document.getElementById('btn-salvar').textContent = 'Salvar';
+  document.getElementById('btn-salvar').disabled = false;
+  document.getElementById('modal').classList.add('aberto');
 }
 
-async function deletarOp(id, nome) {
-  if (!confirm(`Excluir a operação "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
-  const res = await apiDelete(`/api/operacoes/${id}`);
-  if (res) { toast('Operação excluída', 'success'); carregarOperacoes(); }
+function fecharModal() {
+  document.getElementById('modal').classList.remove('aberto');
+}
+
+async function salvarOperacao() {
+  const cliente = document.getElementById('op-cliente').value.trim();
+  const local   = document.getElementById('op-local').value.trim();
+
+  if (!cliente || !local) {
+    alert('Cliente e local são obrigatórios'); return;
+  }
+
+  const id   = document.getElementById('op-id').value;
+  const body = {
+    cliente,
+    local,
+    pais:       document.getElementById('op-pais').value,
+    equipe_qtd: parseInt(document.getElementById('op-equipe').value) || 0,
+    servicos:   document.getElementById('op-servicos').value.split(',').map(s => s.trim()).filter(Boolean),
+    status:     document.getElementById('op-status').value,
+    notas:      document.getElementById('op-notas').value.trim()
+  };
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  try {
+    const url    = id ? `/api/operacoes/${id}` : '/api/operacoes';
+    const method = id ? 'PUT' : 'POST';
+    const res    = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.erro || 'Erro ao salvar operação');
+      btn.disabled = false;
+      btn.textContent = 'Salvar';
+      return;
+    }
+
+    fecharModal();
+    toast(id ? 'Operação atualizada!' : 'Operação criada!', 'success');
+    carregarOperacoes();
+
+  } catch (err) {
+    alert('Erro de conexão. Verifique sua internet.');
+    btn.disabled = false;
+    btn.textContent = 'Salvar';
+  }
+}
+
+function abrirExcluir(id, nome) {
+  document.getElementById('id-excluir').value = id;
+  document.getElementById('nome-excluir').textContent = nome;
+  document.getElementById('modal-excluir').classList.add('aberto');
+}
+
+function fecharExcluir() {
+  document.getElementById('modal-excluir').classList.remove('aberto');
+}
+
+async function confirmarExcluir() {
+  const id = document.getElementById('id-excluir').value;
+  try {
+    const res = await fetch(`/api/operacoes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      fecharExcluir();
+      toast('Operação encerrada com sucesso.', 'success');
+      carregarOperacoes();
+    } else {
+      alert('Erro ao encerrar operação.');
+    }
+  } catch (err) {
+    alert('Erro de conexão.');
+  }
 }
 
 carregarOperacoes();
