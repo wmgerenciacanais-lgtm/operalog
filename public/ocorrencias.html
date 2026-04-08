@@ -5,67 +5,128 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OperaLog — Ocorrências</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
 <style>
-  .oc-list { display: flex; flex-direction: column; gap: 10px; }
+:root {
+  --bg: #060A0F; --surface: #0D1420; --surface2: #111B2E;
+  --border: rgba(255,255,255,0.08);
+  --green: #00C88C; --green-dim: rgba(0,200,140,0.15);
+  --amber: #F5C842; --amber-dim: rgba(245,200,66,0.15);
+  --blue: #4A9EFF; --blue-dim: rgba(74,158,255,0.15);
+  --red: #FF4D6A; --red-dim: rgba(255,77,106,0.15);
+  --text: #FFFFFF; --text-muted: #A0AEC0;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(0,200,140,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,140,0.025) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; z-index:0; }
 
-  .oc-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden;
-    border-left: 4px solid transparent;
-    transition: all 0.15s; animation: fadeUp 0.3s ease both;
-  }
+.topbar { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 28px; height:62px; background:rgba(6,10,15,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:34px; height:34px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:14px; color:#000; }
+.logo-text { font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--text); }
+.logo-text span { color:var(--green); }
+.topbar-center { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:6px 14px; }
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,140,0.4);} 50%{box-shadow:0 0 0 5px transparent;} }
+.topbar-center span { font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text); letter-spacing:0.5px; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.clock { font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text); text-align:right; }
+.clock-date { font-size:10px; color:var(--text-muted); }
+.user-menu { display:flex; align-items:center; gap:10px; padding:6px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:border-color 0.15s; }
+.user-menu:hover { border-color:var(--green); }
+.user-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--green),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#000; }
+.user-name { font-size:13px; font-weight:700; color:var(--text); }
 
-  .oc-item.critico { border-left-color: var(--red); }
-  .oc-item.alerta { border-left-color: var(--amber); }
-  .oc-item.positivo { border-left-color: var(--green); }
-  .oc-item.informativo { border-left-color: var(--blue); }
-  .oc-item:hover { border-color: rgba(255,255,255,0.15); }
+.layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 62px); position:relative; z-index:1; }
+.sidebar { border-right:1px solid var(--border); padding:20px 12px; background:rgba(13,20,32,0.6); display:flex; flex-direction:column; gap:2px; }
+.sidebar-section { font-family:var(--font-mono); font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:2px; text-transform:uppercase; padding:14px 12px 6px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; transition:all 0.15s; font-size:14px; font-weight:600; color:var(--text-muted); text-decoration:none; }
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.ativo { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,200,140,0.25); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-wpp { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:800; color:#fff; text-decoration:none; background:linear-gradient(135deg,#128C7E,#25D366); margin-top:8px; transition:all 0.15s; }
+.nav-wpp:hover { background:linear-gradient(135deg,#075E54,#128C7E); }
 
-  .oc-header { padding: 14px 18px 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .oc-titulo { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--text); flex: 1; }
-  .oc-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.main { padding:24px 28px; overflow-y:auto; }
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+.page-title { font-family:var(--font-display); font-size:26px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+.page-sub { font-size:13px; font-weight:500; color:var(--text-muted); margin-top:3px; }
 
-  .oc-meta { padding: 0 18px 10px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
-  .oc-meta span { display: flex; align-items: center; gap: 4px; }
+.btn { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:var(--font-body); transition:all 0.15s; }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:var(--green); color:var(--green); }
+.btn-primary { background:var(--green); color:#000; font-weight:800; }
+.btn-primary:hover { background:#00e6a3; }
+.btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
 
-  .oc-desc { padding: 0 18px 10px; font-size: 13px; font-weight: 500; color: var(--text-muted); line-height: 1.5; }
+.filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.filtro-btn { padding:7px 16px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:var(--font-body); transition:all 0.15s; }
+.filtro-btn.ativo { background:var(--green-dim); border-color:var(--green); color:var(--green); }
 
-  .oc-actions { padding: 10px 18px 14px; display: flex; gap: 8px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.oc-list { display:flex; flex-direction:column; gap:10px; }
+.oc-item { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; border-left:4px solid transparent; transition:all 0.15s; animation:fadeUp 0.3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+.oc-item.critico { border-left-color:var(--red); }
+.oc-item.alerta { border-left-color:var(--amber); }
+.oc-item.positivo { border-left-color:var(--green); }
+.oc-item.informativo { border-left-color:var(--blue); }
+.oc-item:hover { border-color:rgba(255,255,255,0.15); }
 
-  .btn-sm {
-    padding: 7px 16px; border-radius: 6px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
+.oc-header { padding:14px 18px 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.oc-titulo { font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text); flex:1; }
+.oc-badges { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.oc-meta { padding:0 18px 10px; display:flex; gap:16px; flex-wrap:wrap; font-size:12px; font-weight:600; color:var(--text-muted); font-family:var(--font-mono); }
+.oc-desc { padding:0 18px 10px; font-size:13px; font-weight:500; color:var(--text-muted); line-height:1.5; }
+.oc-actions { padding:10px 18px 14px; display:flex; gap:8px; border-top:1px solid var(--border); }
+.resolucao-box { padding:12px 18px; background:var(--green-dim); border-top:1px solid rgba(0,200,140,0.2); font-size:13px; font-weight:500; color:var(--text); }
+.resolucao-label { font-size:11px; font-weight:700; color:var(--green); font-family:var(--font-mono); margin-bottom:4px; }
 
-  .btn-sm:hover { border-color: var(--green); color: var(--green); }
-  .btn-sm.green { background: var(--green); color: #000; border-color: var(--green); }
-  .btn-sm.red { background: var(--red-dim); color: var(--red); border-color: rgba(255,77,106,0.3); }
-  .btn-sm.red:hover { background: rgba(255,77,106,0.25); }
+.sev-badge { padding:2px 7px; border-radius:4px; font-size:10px; font-weight:800; font-family:var(--font-mono); }
+.sev-critico { background:var(--red-dim); color:var(--red); }
+.sev-alerta { background:var(--amber-dim); color:var(--amber); }
+.sev-positivo { background:var(--green-dim); color:var(--green); }
+.sev-informativo { background:var(--blue-dim); color:var(--blue); }
 
-  .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.status-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; font-family:var(--font-mono); }
+.status-aberta { background:var(--red-dim); color:var(--red); }
+.status-andamento { background:var(--amber-dim); color:var(--amber); }
+.status-resolvida { background:var(--green-dim); color:var(--green); }
 
-  .filtro-btn {
-    padding: 7px 16px; border-radius: 20px;
-    font-size: 13px; font-weight: 700;
-    cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-    font-family: var(--font-body); transition: all 0.15s;
-  }
+.btn-sm { padding:7px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:var(--font-body); transition:all 0.15s; }
+.btn-sm:hover { border-color:var(--green); color:var(--green); }
+.btn-sm.green { background:var(--green); color:#000; border-color:var(--green); }
+.btn-sm.red { background:var(--red-dim); color:var(--red); border-color:rgba(255,77,106,0.3); }
 
-  .filtro-btn.ativo { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .filtro-btn:hover { border-color: var(--green); }
+.modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.aberto { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; animation:fadeUp 0.2s ease; }
+.modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.modal-title { font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--text); }
+.modal-close { width:32px; height:32px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+.form-group { margin-bottom:16px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-label { display:block; font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.form-input,.form-select,.form-textarea { width:100%; padding:11px 14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:500; outline:none; transition:all 0.15s; }
+.form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--green); background:rgba(0,200,140,0.05); }
+.form-input::placeholder { color:rgba(255,255,255,0.2); }
+.form-select option { background:var(--surface); color:var(--text); }
+.form-textarea { resize:vertical; min-height:80px; }
 
-  .resolucao-box { padding: 12px 18px; background: var(--green-dim); border-top: 1px solid rgba(0,200,140,0.2); font-size: 13px; font-weight: 500; color: var(--text); }
-  .resolucao-label { font-size: 11px; font-weight: 700; color: var(--green); font-family: var(--font-mono); margin-bottom: 4px; }
+.loading { display:flex; align-items:center; justify-content:center; padding:40px; color:var(--text-muted); font-size:14px; font-weight:600; }
+.empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-  .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { background:var(--surface); border-radius:10px; padding:14px 20px; font-family:var(--font-body); font-size:14px; font-weight:700; color:var(--text); box-shadow:0 8px 24px rgba(0,0,0,0.3); animation:fadeUp 0.2s ease; max-width:320px; border-left:4px solid var(--green); }
+.toast.error { border-left-color:var(--red); }
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 </style>
 </head>
 <body>
@@ -98,6 +159,10 @@
     <div class="sidebar-section">GESTÃO</div>
     <a href="/ocorrencias.html" class="nav-item ativo"><span class="nav-icon">⊕</span> Ocorrências</a>
     <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
+    <div class="sidebar-section">COMUNICAÇÃO</div>
+    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-wpp">
+      <span class="nav-icon">💬</span> OperaLog Board
+    </a>
   </aside>
 
   <main class="main">
@@ -112,10 +177,9 @@
     <div class="filtros">
       <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todas</button>
       <button class="filtro-btn" onclick="filtrar('aberta',this)">🔓 Abertas</button>
-      <button class="filtro-btn" onclick="filtrar('em_andamento',this)">⚙️ Em andamento</button>
       <button class="filtro-btn" onclick="filtrar('resolvida',this)">✅ Resolvidas</button>
-      <button class="filtro-btn" style="border-color:rgba(255,77,106,0.4);color:var(--red)" onclick="filtrar('critico',this)">🔴 Críticas</button>
-      <button class="filtro-btn" style="border-color:rgba(245,200,66,0.4);color:var(--amber)" onclick="filtrar('alerta',this)">⚠️ Alerta</button>
+      <button class="filtro-btn" onclick="filtrar('critico',this)" style="border-color:rgba(255,77,106,0.4);color:var(--red)">🔴 Críticas</button>
+      <button class="filtro-btn" onclick="filtrar('alerta',this)" style="border-color:rgba(245,200,66,0.4);color:var(--amber)">⚠️ Alerta</button>
     </div>
 
     <div class="oc-list" id="oc-list">
@@ -124,7 +188,7 @@
   </main>
 </div>
 
-<!-- Modal Nova Ocorrência -->
+<!-- MODAL NOVA OCORRÊNCIA -->
 <div class="modal-overlay" id="modal-oc">
   <div class="modal">
     <div class="modal-header">
@@ -167,17 +231,17 @@
       </div>
       <div class="form-group">
         <label class="form-label">Descrição / Causa raiz</label>
-        <textarea class="form-textarea" id="oc-desc" placeholder="Descreva o que aconteceu e qual a causa raiz identificada..."></textarea>
+        <textarea class="form-textarea" id="oc-desc" placeholder="Descreva o que aconteceu e a causa raiz..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarOc()">Registrar</button>
+      <button class="btn btn-primary" id="btn-salvar-oc" onclick="salvarOc()">Registrar</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Resolver -->
+<!-- MODAL RESOLVER -->
 <div class="modal-overlay" id="modal-resolver">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
@@ -188,36 +252,85 @@
       <input type="hidden" id="resolver-id">
       <div class="form-group">
         <label class="form-label">Descreva a resolução adotada *</label>
-        <textarea class="form-textarea" id="resolver-texto" style="min-height:120px"
-          placeholder="Ex: Reunião realizada com a JSL. Horário de coleta ajustado para 8h. Monitoramento diário por 30 dias."></textarea>
+        <textarea class="form-textarea" id="resolver-texto" style="min-height:120px" placeholder="Ex: Reunião realizada com a JSL. Horário de coleta ajustado para 8h..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharResolver()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarResolver()">✅ Confirmar Resolução</button>
+      <button class="btn btn-primary" id="btn-resolver" onclick="confirmarResolver()">✅ Confirmar Resolução</button>
     </div>
   </div>
 </div>
 
-<script src="/shared.js"></script>
-<script>
-let todasOcs = [];
-let filtroAtual = 'todos';
+<div class="toast-container" id="toast-container"></div>
 
+<script>
+// ─── SETUP ────────────────────────────────────────────
+const token   = localStorage.getItem('operalog_token');
+const usuario = JSON.parse(localStorage.getItem('operalog_usuario') || '{}');
+if (!token) { window.location.href = '/'; }
+
+document.getElementById('user-name').textContent = usuario.nome || 'Usuário';
+document.getElementById('user-initials').textContent =
+  (usuario.nome || 'U').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', {weekday:'short',day:'2-digit',month:'short'});
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function logout() { localStorage.removeItem('operalog_token'); localStorage.removeItem('operalog_usuario'); window.location.href = '/'; }
+
+function toast(msg, tipo = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (tipo === 'error' ? ' error' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function tempoAtras(date) {
+  const diff = Math.floor((Date.now() - new Date(date)) / 60000);
+  if (diff < 1) return 'agora';
+  if (diff < 60) return `${diff}min atrás`;
+  if (diff < 1440) return `${Math.floor(diff/60)}h atrás`;
+  return `${Math.floor(diff/1440)}d atrás`;
+}
+
+// ─── DADOS ────────────────────────────────────────────
+let todasOcs   = [];
+let filtroAtual = 'todos';
 const ICONS = { critico:'🔴', alerta:'🟡', positivo:'🟢', informativo:'🔵' };
 const STATUS_LABEL = { aberta:'Aberta', em_andamento:'Em andamento', resolvida:'Resolvida' };
 
 async function carregarOcs() {
-  todasOcs = await api('/api/ocorrencias?limit=100') || [];
-  renderOcs();
+  try {
+    const res = await fetch('/api/ocorrencias?limit=100', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.status === 401) { logout(); return; }
+    todasOcs = await res.json();
+    renderOcs();
+  } catch(e) {
+    document.getElementById('oc-list').innerHTML = '<div class="loading">Erro ao carregar. Verifique sua conexão.</div>';
+  }
 }
 
 async function carregarSelects() {
-  const [ops, ts] = await Promise.all([api('/api/operacoes'), api('/api/transportadoras')]);
-  const selOp = document.getElementById('oc-operacao');
-  const selTs = document.getElementById('oc-transp');
-  (ops || []).forEach(o => { selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`; });
-  (ts || []).forEach(t => { selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
+  try {
+    const [rOps, rTs] = await Promise.all([
+      fetch('/api/operacoes', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/transportadoras', { headers: { 'Authorization': 'Bearer ' + token } })
+    ]);
+    const ops = await rOps.json();
+    const ts  = await rTs.json();
+    const selOp = document.getElementById('oc-operacao');
+    const selTs = document.getElementById('oc-transp');
+    ops.forEach(o => { selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`; });
+    ts.forEach(t  => { selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
+  } catch(e) { console.log('Erro ao carregar selects', e); }
 }
 
 function filtrar(tipo, btn) {
@@ -229,31 +342,27 @@ function filtrar(tipo, btn) {
 
 function renderOcs() {
   let ocs = todasOcs;
-  if (filtroAtual === 'aberta') ocs = ocs.filter(o => o.status === 'aberta');
-  else if (filtroAtual === 'em_andamento') ocs = ocs.filter(o => o.status === 'em_andamento');
-  else if (filtroAtual === 'resolvida') ocs = ocs.filter(o => o.status === 'resolvida');
-  else if (filtroAtual === 'critico') ocs = ocs.filter(o => o.severidade === 'critico');
-  else if (filtroAtual === 'alerta') ocs = ocs.filter(o => o.severidade === 'alerta');
+  if (filtroAtual === 'aberta')   ocs = ocs.filter(o => o.status === 'aberta');
+  if (filtroAtual === 'resolvida') ocs = ocs.filter(o => o.status === 'resolvida');
+  if (filtroAtual === 'critico')  ocs = ocs.filter(o => o.severidade === 'critico');
+  if (filtroAtual === 'alerta')   ocs = ocs.filter(o => o.severidade === 'alerta');
 
-  const list = document.getElementById('oc-list');
+  const list    = document.getElementById('oc-list');
+  const isAdmin = usuario.perfil === 'admin';
 
   if (!ocs.length) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">✅</div>
-      <div class="empty-title">Nenhuma ocorrência encontrada</div>
-      <div>Tudo em ordem ou ajuste os filtros acima</div>
-    </div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">Nenhuma ocorrência encontrada</div><div>Tudo em ordem ou ajuste os filtros</div></div>`;
     return;
   }
 
   list.innerHTML = ocs.map((oc, i) => `
     <div class="oc-item ${oc.severidade}" style="animation-delay:${i*0.04}s">
       <div class="oc-header">
-        <div class="oc-titulo">${ICONS[oc.severidade] || '⚪'} ${oc.titulo}</div>
+        <div class="oc-titulo">${ICONS[oc.severidade]||'⚪'} ${oc.titulo}</div>
         <div class="oc-badges">
           <span class="sev-badge sev-${oc.severidade}">${oc.severidade.toUpperCase()}</span>
-          <span class="status-pill ${oc.status === 'resolvida' ? 'status-ativo' : oc.status === 'em_andamento' ? 'status-alerta' : 'status-critico'}">
-            ${STATUS_LABEL[oc.status] || oc.status}
+          <span class="status-pill status-${oc.status === 'resolvida' ? 'resolvida' : oc.status === 'em_andamento' ? 'andamento' : 'aberta'}">
+            ${STATUS_LABEL[oc.status]||oc.status}
           </span>
         </div>
       </div>
@@ -262,82 +371,128 @@ function renderOcs() {
         ${oc.operacao_nome ? `<span>📦 ${oc.operacao_nome}</span>` : ''}
         ${oc.transportadora_nome ? `<span>🚛 ${oc.transportadora_nome}</span>` : ''}
         ${oc.registrado_por_nome ? `<span>👤 ${oc.registrado_por_nome}</span>` : ''}
-        ${oc.operacao_pais ? `<span>${{BR:'🇧🇷',AR:'🇦🇷',PT:'🇵🇹'}[oc.operacao_pais]||''}</span>` : ''}
       </div>
       ${oc.descricao ? `<div class="oc-desc">${oc.descricao}</div>` : ''}
-      ${oc.resolucao ? `
-        <div class="resolucao-box">
-          <div class="resolucao-label">✅ RESOLUÇÃO ADOTADA</div>
-          <div>${oc.resolucao}</div>
-        </div>` : ''}
-      <div class="oc-actions">
-        ${oc.status !== 'resolvida' ? `<button class="btn-sm green" onclick="abrirResolver('${oc.id}')">✅ Resolver</button>` : ''}
-        <button class="btn-sm" onclick="window.location='/pdca.html?oc=${oc.id}'">📊 PDCA</button>
-        <button class="btn-sm" onclick="editarOc(${JSON.stringify(oc).replace(/"/g,'&quot;')})">✏️ Editar</button>
-        ${isAdmin() ? `<button class="btn-sm red" onclick="deletarOc('${oc.id}', '${oc.titulo.replace(/'/g,"\\'")}')">🗑️ Excluir</button>` : ''}
-      </div>
+      ${oc.resolucao ? `<div class="resolucao-box"><div class="resolucao-label">✅ RESOLUÇÃO ADOTADA</div><div>${oc.resolucao}</div></div>` : ''}
+      ${oc.status !== 'resolvida' ? `
+        <div class="oc-actions">
+          <button class="btn-sm green" onclick="abrirResolver('${oc.id}')">✅ Resolver</button>
+          <button class="btn-sm" onclick="editarOc('${oc.id}','${oc.titulo.replace(/'/g,"\\'")}','${oc.severidade}','${oc.status}','${oc.operacao_id||''}','${oc.transportadora_id||''}','${(oc.descricao||'').replace(/'/g,"\\'")}')">✏️ Editar</button>
+          ${isAdmin ? `<button class="btn-sm red" onclick="excluirOc('${oc.id}')">🗑️ Excluir</button>` : ''}
+        </div>` : `
+        ${isAdmin ? `<div class="oc-actions"><button class="btn-sm red" onclick="excluirOc('${oc.id}')">🗑️ Excluir</button></div>` : ''}`}
     </div>
   `).join('');
 }
 
-function abrirModal(oc = null) {
-  document.getElementById('oc-id').value = oc?.id || '';
-  document.getElementById('oc-titulo').value = oc?.titulo || '';
-  document.getElementById('oc-severidade').value = oc?.severidade || 'alerta';
-  document.getElementById('oc-status').value = oc?.status || 'aberta';
-  document.getElementById('oc-operacao').value = oc?.operacao_id || '';
-  document.getElementById('oc-transp').value = oc?.transportadora_id || '';
-  document.getElementById('oc-desc').value = oc?.descricao || '';
-  document.getElementById('modal-titulo').textContent = oc ? 'Editar Ocorrência' : 'Nova Ocorrência';
+// ─── MODAL ────────────────────────────────────────────
+function abrirModal() {
+  document.getElementById('oc-id').value         = '';
+  document.getElementById('oc-titulo').value     = '';
+  document.getElementById('oc-severidade').value = 'alerta';
+  document.getElementById('oc-status').value     = 'aberta';
+  document.getElementById('oc-operacao').value   = '';
+  document.getElementById('oc-transp').value     = '';
+  document.getElementById('oc-desc').value       = '';
+  document.getElementById('modal-titulo').textContent      = 'Nova Ocorrência';
+  document.getElementById('btn-salvar-oc').textContent     = 'Registrar';
+  document.getElementById('btn-salvar-oc').disabled        = false;
   document.getElementById('modal-oc').classList.add('aberto');
 }
 
-function editarOc(oc) { abrirModal(oc); }
+function editarOc(id, titulo, severidade, status, opId, transpId, desc) {
+  document.getElementById('oc-id').value         = id;
+  document.getElementById('oc-titulo').value     = titulo;
+  document.getElementById('oc-severidade').value = severidade;
+  document.getElementById('oc-status').value     = status;
+  document.getElementById('oc-operacao').value   = opId;
+  document.getElementById('oc-transp').value     = transpId;
+  document.getElementById('oc-desc').value       = desc;
+  document.getElementById('modal-titulo').textContent      = 'Editar Ocorrência';
+  document.getElementById('btn-salvar-oc').textContent     = 'Salvar';
+  document.getElementById('btn-salvar-oc').disabled        = false;
+  document.getElementById('modal-oc').classList.add('aberto');
+}
+
 function fecharModal() { document.getElementById('modal-oc').classList.remove('aberto'); }
 
 async function salvarOc() {
-  const id = document.getElementById('oc-id').value;
+  const titulo = document.getElementById('oc-titulo').value.trim();
+  if (!titulo) { alert('Título é obrigatório'); return; }
+
+  const id   = document.getElementById('oc-id').value;
   const body = {
-    titulo: document.getElementById('oc-titulo').value.trim(),
-    severidade: document.getElementById('oc-severidade').value,
-    status: document.getElementById('oc-status').value,
-    operacao_id: document.getElementById('oc-operacao').value || null,
+    titulo,
+    severidade:        document.getElementById('oc-severidade').value,
+    status:            document.getElementById('oc-status').value,
+    operacao_id:       document.getElementById('oc-operacao').value || null,
     transportadora_id: document.getElementById('oc-transp').value || null,
-    descricao: document.getElementById('oc-desc').value.trim()
+    descricao:         document.getElementById('oc-desc').value.trim()
   };
-  if (!body.titulo) { alert('Título é obrigatório'); return; }
-  const url = id ? `/api/ocorrencias/${id}` : '/api/ocorrencias';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiPost(url, body, method);
-  if (res) { fecharModal(); carregarOcs(); toast('Ocorrência registrada!', 'success'); }
+
+  const btn = document.getElementById('btn-salvar-oc');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(id ? `/api/ocorrencias/${id}` : '/api/ocorrencias', {
+      method:  id ? 'PUT' : 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body:    JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro || 'Erro ao salvar'); btn.disabled=false; btn.textContent='Registrar'; return; }
+    fecharModal();
+    toast(id ? 'Ocorrência atualizada! ✅' : 'Ocorrência registrada! ✅', 'success');
+    carregarOcs();
+  } catch(e) {
+    alert('Erro de conexão. Tente novamente.');
+    btn.disabled = false; btn.textContent = 'Registrar';
+  }
 }
 
+// ─── RESOLVER ─────────────────────────────────────────
 function abrirResolver(id) {
-  document.getElementById('resolver-id').value = id;
+  document.getElementById('resolver-id').value  = id;
   document.getElementById('resolver-texto').value = '';
+  document.getElementById('btn-resolver').disabled = false;
+  document.getElementById('btn-resolver').textContent = '✅ Confirmar Resolução';
   document.getElementById('modal-resolver').classList.add('aberto');
 }
 
 function fecharResolver() { document.getElementById('modal-resolver').classList.remove('aberto'); }
 
 async function confirmarResolver() {
-  const id = document.getElementById('resolver-id').value;
+  const id       = document.getElementById('resolver-id').value;
   const resolucao = document.getElementById('resolver-texto').value.trim();
   if (!resolucao) { alert('Descreva a resolução adotada'); return; }
-  const res = await apiPost(`/api/ocorrencias/${id}/resolver`, { resolucao }, 'PUT');
-  if (res) { fecharResolver(); carregarOcs(); toast('Ocorrência resolvida! ✅', 'success'); }
+
+  const btn = document.getElementById('btn-resolver');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(`/api/ocorrencias/${id}/resolver`, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ resolucao })
+    });
+    if (res.ok) { fecharResolver(); toast('Ocorrência resolvida! ✅', 'success'); carregarOcs(); }
+    else { alert('Erro ao resolver ocorrência.'); btn.disabled=false; btn.textContent='✅ Confirmar Resolução'; }
+  } catch(e) { alert('Erro de conexão.'); btn.disabled=false; btn.textContent='✅ Confirmar Resolução'; }
 }
 
-async function deletarOc(id, titulo) {
-  if (!confirm(`Excluir a ocorrência "${titulo}"?\n\nEsta ação não pode ser desfeita.`)) return;
-  const res = await apiDelete(`/api/ocorrencias/${id}`);
-  if (res) { toast('Ocorrência excluída', 'success'); carregarOcs(); }
+// ─── EXCLUIR ──────────────────────────────────────────
+async function excluirOc(id) {
+  if (!confirm('Excluir esta ocorrência permanentemente?')) return;
+  try {
+    const res = await fetch(`/api/ocorrencias/${id}`, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) { toast('Ocorrência excluída.', 'success'); carregarOcs(); }
+    else { alert('Erro ao excluir.'); }
+  } catch(e) { alert('Erro de conexão.'); }
 }
 
-if (new URLSearchParams(window.location.search).get('nova') === '1') {
-  window.addEventListener('load', () => setTimeout(abrirModal, 300));
-}
-
+// ─── INIT ─────────────────────────────────────────────
 carregarOcs();
 carregarSelects();
 </script>
