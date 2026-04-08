@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>OperaLog — Corrigir Scores PET</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#060A0F; --surface:#0D1420; --surface2:#111B2E; --border:rgba(255,255,255,0.08); --green:#00C88C; --amber:#F5C842; --red:#FF4D6A; --blue:#4A9EFF; --text:#FFFFFF; --muted:#A0AEC0; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:36px; width:100%; max-width:560px; }
+h1 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--green); margin-bottom:6px; }
+p { font-size:13px; color:var(--muted); margin-bottom:28px; font-weight:500; }
+.transp-list { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
+.transp-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+.transp-nome { font-weight:700; font-size:14px; }
+.transp-score { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; }
+.status { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; }
+.status-ok { background:rgba(0,200,140,0.15); color:var(--green); }
+.status-alerta { background:rgba(245,200,66,0.15); color:var(--amber); }
+.status-critico { background:rgba(255,77,106,0.15); color:var(--red); }
+.btn { width:100%; padding:14px; border-radius:10px; background:var(--green); color:#000; font-family:'Syne',sans-serif; font-size:16px; font-weight:800; border:none; cursor:pointer; transition:all 0.15s; }
+.btn:hover { background:#00e6a3; }
+.btn:disabled { opacity:0.6; cursor:not-allowed; }
+.log { margin-top:20px; background:var(--surface2); border-radius:10px; padding:16px; font-size:12px; font-family:monospace; color:var(--muted); line-height:1.8; display:none; }
+.log.visivel { display:block; }
+.log .ok { color:var(--green); }
+.log .erro { color:var(--red); }
+.log .info { color:var(--amber); }
+.voltar { display:block; text-align:center; margin-top:16px; color:var(--muted); font-size:13px; text-decoration:none; }
+.voltar:hover { color:var(--green); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🔧 Corrigir Scores PET</h1>
+  <p>Esta página vai apagar todos os registros PET existentes e recadastrar com os scores corretos para a demo da Produslog.</p>
+
+  <div class="transp-list">
+    <div class="transp-item">
+      <div>
+        <div class="transp-nome">🚛 JSL Logística</div>
+        <div style="font-size:11px;color:var(--muted)">OTD 91% · Atraso 3.5h · Oc/1k 7.2 · Sat 7.0</div>
+      </div>
+      <div style="text-align:right">
+        <div class="transp-score" style="color:var(--amber)">7.4</div>
+        <span class="status status-alerta">⚠️ Alerta</span>
+      </div>
+    </div>
+    <div class="transp-item">
+      <div>
+        <div class="transp-nome">🚛 Translovato</div>
+        <div style="font-size:11px;color:var(--muted)">OTD 97% · Atraso 1.2h · Oc/1k 2.8 · Sat 9.0</div>
+      </div>
+      <div style="text-align:right">
+        <div class="transp-score" style="color:var(--green)">9.1</div>
+        <span class="status status-ok">✅ Ótimo</span>
+      </div>
+    </div>
+    <div class="transp-item">
+      <div>
+        <div class="transp-nome">🚛 Luft Logistics</div>
+        <div style="font-size:11px;color:var(--muted)">OTD 88% · Atraso 4.8h · Oc/1k 9.1 · Sat 6.5</div>
+      </div>
+      <div style="text-align:right">
+        <div class="transp-score" style="color:var(--red)">6.2</div>
+        <span class="status status-critico">🔴 Crítico</span>
+      </div>
+    </div>
+    <div class="transp-item">
+      <div>
+        <div class="transp-nome">🚛 Rodoex Argentina</div>
+        <div style="font-size:11px;color:var(--muted)">OTD 95% · Atraso 2.0h · Oc/1k 4.5 · Sat 8.5</div>
+      </div>
+      <div style="text-align:right">
+        <div class="transp-score" style="color:var(--green)">8.6</div>
+        <span class="status status-ok">✅ Ótimo</span>
+      </div>
+    </div>
+    <div class="transp-item">
+      <div>
+        <div class="transp-nome">🚛 Cartrack Portugal</div>
+        <div style="font-size:11px;color:var(--muted)">OTD 98% · Atraso 0.8h · Oc/1k 1.5 · Sat 9.5</div>
+      </div>
+      <div style="text-align:right">
+        <div class="transp-score" style="color:var(--green)">9.8</div>
+        <span class="status status-ok">✅ Excelente</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="btn-corrigir" onclick="corrigirScores()">
+    🔧 Corrigir Scores Agora
+  </button>
+
+  <div class="log" id="log"></div>
+
+  <a href="/transportadoras.html" class="voltar">← Voltar para Transportadoras</a>
+</div>
+
+<script>
+const token = localStorage.getItem('operalog_token');
+if (!token) { window.location.href = '/'; }
+
+const DADOS_PET = [
+  { busca: 'JSL',       otd: 91, atraso: 3.5, oc: 7.2, sat: 7.0 },
+  { busca: 'Translovato', otd: 97, atraso: 1.2, oc: 2.8, sat: 9.0 },
+  { busca: 'Luft',      otd: 88, atraso: 4.8, oc: 9.1, sat: 6.5 },
+  { busca: 'Rodoex',    otd: 95, atraso: 2.0, oc: 4.5, sat: 8.5 },
+  { busca: 'Cartrack',  otd: 98, atraso: 0.8, oc: 1.5, sat: 9.5 },
+];
+
+function log(msg, tipo = 'info') {
+  const el = document.getElementById('log');
+  el.classList.add('visivel');
+  el.innerHTML += `<div class="${tipo}">${msg}</div>`;
+}
+
+async function corrigirScores() {
+  const btn = document.getElementById('btn-corrigir');
+  btn.disabled = true;
+  btn.textContent = 'Corrigindo...';
+  document.getElementById('log').innerHTML = '';
+
+  try {
+    // 1. Buscar transportadoras
+    log('📋 Buscando transportadoras...', 'info');
+    const res = await fetch('/api/transportadoras', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const transportadoras = await res.json();
+    log(`✅ ${transportadoras.length} transportadoras encontradas`, 'ok');
+
+    // 2. Para cada transportadora, registrar PET com dados corretos
+    const hoje = new Date();
+    const inicioStr = '2026-01-01';
+    const fimStr = hoje.toISOString().split('T')[0];
+
+    for (const dado of DADOS_PET) {
+      // Encontrar transportadora pelo nome
+      const transp = transportadoras.find(t =>
+        t.nome.toLowerCase().includes(dado.busca.toLowerCase())
+      );
+
+      if (!transp) {
+        log(`❌ Transportadora "${dado.busca}" não encontrada`, 'erro');
+        continue;
+      }
+
+      log(`⚙️ Registrando PET para ${transp.nome}...`, 'info');
+
+      // Registrar novo PET com dados corretos
+      const petRes = await fetch(`/api/transportadoras/${transp.id}/pet`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          periodo_inicio: inicioStr,
+          periodo_fim: fimStr,
+          otd: dado.otd,
+          atraso_medio: dado.atraso,
+          ocorrencias_mil: dado.oc,
+          satisfacao: dado.sat,
+          total_viagens: 500,
+          notas: 'Avaliação PET — Demo Produslog'
+        })
+      });
+
+      const petData = await petRes.json();
+
+      if (petRes.ok) {
+        log(`✅ ${transp.nome} — Score: ${petData.score_calculado}`, 'ok');
+      } else {
+        log(`❌ Erro ao salvar PET para ${transp.nome}: ${petData.erro}`, 'erro');
+      }
+    }
+
+    log('', 'info');
+    log('🎉 Processo concluído! Verifique os scores em Transportadoras.', 'ok');
+
+    btn.textContent = '✅ Concluído — Ver Transportadoras';
+    btn.disabled = false;
+    btn.onclick = () => window.location.href = '/transportadoras.html';
+
+  } catch (e) {
+    log(`❌ Erro de conexão: ${e.message}`, 'erro');
+    btn.disabled = false;
+    btn.textContent = '🔧 Tentar Novamente';
+  }
+}
+</script>
+</body>
+</html>
