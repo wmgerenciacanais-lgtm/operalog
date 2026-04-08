@@ -5,54 +5,117 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OperaLog — Board PDCA</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
 <style>
-  .main { padding: 24px 20px; }
+:root {
+  --bg: #060A0F; --surface: #0D1420; --surface2: #111B2E;
+  --border: rgba(255,255,255,0.08);
+  --green: #00C88C; --green-dim: rgba(0,200,140,0.15);
+  --amber: #F5C842; --amber-dim: rgba(245,200,66,0.15);
+  --blue: #4A9EFF; --blue-dim: rgba(74,158,255,0.15);
+  --red: #FF4D6A; --red-dim: rgba(255,77,106,0.15);
+  --purple: #C084FC; --purple-dim: rgba(192,132,252,0.15);
+  --text: #FFFFFF; --text-muted: #A0AEC0;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(0,200,140,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,140,0.025) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; z-index:0; }
 
-  .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+.topbar { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 28px; height:62px; background:rgba(6,10,15,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:34px; height:34px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:14px; color:#000; }
+.logo-text { font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--text); }
+.logo-text span { color:var(--green); }
+.topbar-center { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:6px 14px; }
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,140,0.4);} 50%{box-shadow:0 0 0 5px transparent;} }
+.topbar-center span { font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text); letter-spacing:0.5px; }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.clock { font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text); text-align:right; }
+.clock-date { font-size:10px; color:var(--text-muted); }
+.user-menu { display:flex; align-items:center; gap:10px; padding:6px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:border-color 0.15s; }
+.user-menu:hover { border-color:var(--green); }
+.user-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--green),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#000; }
+.user-name { font-size:13px; font-weight:700; color:var(--text); }
 
-  .coluna { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 62px); position:relative; z-index:1; }
+.sidebar { border-right:1px solid var(--border); padding:20px 12px; background:rgba(13,20,32,0.6); display:flex; flex-direction:column; gap:2px; }
+.sidebar-section { font-family:var(--font-mono); font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:2px; text-transform:uppercase; padding:14px 12px 6px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; transition:all 0.15s; font-size:14px; font-weight:600; color:var(--text-muted); text-decoration:none; }
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.ativo { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,200,140,0.25); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-wpp { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:800; color:#fff; text-decoration:none; background:linear-gradient(135deg,#128C7E,#25D366); margin-top:8px; transition:all 0.15s; }
+.nav-wpp:hover { background:linear-gradient(135deg,#075E54,#128C7E); }
 
-  .coluna-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.main { padding:24px 20px; overflow-y:auto; }
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+.page-title { font-family:var(--font-display); font-size:26px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+.page-sub { font-size:13px; font-weight:500; color:var(--text-muted); margin-top:3px; }
 
-  .coluna-title { font-family: var(--font-display); font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.btn { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; font-family:var(--font-body); transition:all 0.15s; }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:var(--green); color:var(--green); }
+.btn-primary { background:var(--green); color:#000; font-weight:800; }
+.btn-primary:hover { background:#00e6a3; }
+.btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
 
-  .coluna-letter { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; font-family: var(--font-display); }
+/* BOARD */
+.board { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start; }
+.coluna { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.coluna-header { padding:12px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.coluna-title { font-family:var(--font-display); font-size:13px; font-weight:800; display:flex; align-items:center; gap:8px; }
+.coluna-letter { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; }
+.coluna-count { font-family:var(--font-mono); font-size:10px; font-weight:500; color:var(--text-muted); background:var(--surface2); padding:2px 7px; border-radius:10px; }
+.coluna-body { padding:10px; display:flex; flex-direction:column; gap:8px; min-height:120px; }
+.coluna-empty { padding:20px; text-align:center; color:var(--text-muted); font-size:12px; font-weight:600; border:1px dashed var(--border); border-radius:8px; margin:4px; }
 
-  .coluna-count { font-family: var(--font-mono); font-size: 10px; font-weight: 500; color: var(--text-muted); background: var(--surface2); padding: 2px 7px; border-radius: 10px; }
+.pdca-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; transition:all 0.15s; animation:fadeUp 0.3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+.pdca-card:hover { border-color:rgba(255,255,255,0.2); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+.pdca-card-title { font-family:var(--font-display); font-size:13px; font-weight:800; color:var(--text); margin-bottom:6px; line-height:1.3; }
+.pdca-card-meta { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:600; color:var(--text-muted); font-family:var(--font-mono); }
+.pdca-card-meta span { display:flex; align-items:center; gap:5px; }
+.prazo-ok { color:var(--green); }
+.prazo-urgente { color:var(--amber); }
+.prazo-atrasado { color:var(--red); }
+.pdca-card-actions { display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
+.card-btn { flex:1; padding:5px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-body); transition:all 0.15s; }
+.card-btn:hover { border-color:var(--green); color:var(--green); }
+.card-btn.avancar { background:var(--green-dim); border-color:var(--green); color:var(--green); }
+.card-btn.voltar { background:var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+.card-btn.danger { background:var(--red-dim); border-color:rgba(255,77,106,0.3); color:var(--red); flex:0; }
 
-  .coluna-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 120px; }
+/* MODALS */
+.modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.aberto { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; animation:fadeUp 0.2s ease; }
+.modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.modal-title { font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--text); }
+.modal-close { width:32px; height:32px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+.form-group { margin-bottom:16px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-label { display:block; font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.form-input,.form-select,.form-textarea { width:100%; padding:11px 14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-body); font-size:14px; font-weight:500; outline:none; transition:all 0.15s; }
+.form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--green); background:rgba(0,200,140,0.05); }
+.form-input::placeholder { color:rgba(255,255,255,0.2); }
+.form-select option { background:var(--surface); color:var(--text); }
+.form-textarea { resize:vertical; min-height:80px; }
 
-  .pdca-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; transition: all 0.15s; cursor: pointer; animation: fadeUp 0.3s ease both; }
+.loading { display:flex; align-items:center; justify-content:center; padding:40px; color:var(--text-muted); font-size:14px; font-weight:600; grid-column:1/-1; }
 
-  .pdca-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { background:var(--surface); border-radius:10px; padding:14px 20px; font-family:var(--font-body); font-size:14px; font-weight:700; color:var(--text); box-shadow:0 8px 24px rgba(0,0,0,0.3); animation:fadeUp 0.2s ease; max-width:320px; border-left:4px solid var(--green); }
+.toast.error { border-left-color:var(--red); }
+.toast.warning { border-left-color:var(--amber); }
 
-  .pdca-card-title { font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 6px; line-height: 1.3; }
-
-  .pdca-card-meta { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
-  .pdca-card-meta span { display: flex; align-items: center; gap: 5px; }
-
-  .prazo-ok { color: var(--green); }
-  .prazo-urgente { color: var(--amber); }
-  .prazo-atrasado { color: var(--red); }
-
-  .pdca-card-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-
-  .card-btn { flex: 1; padding: 5px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: var(--font-body); transition: all 0.15s; }
-  .card-btn:hover { border-color: var(--green); color: var(--green); }
-  .card-btn.avancar { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .card-btn.voltar { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
-  .card-btn.danger { background: var(--red-dim); border-color: rgba(255,77,106,0.3); color: var(--red); flex: none; padding: 5px 8px; }
-  .card-btn.danger:hover { background: rgba(255,77,106,0.25); }
-
-  .coluna-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600; border: 1px dashed var(--border); border-radius: 8px; margin: 4px; }
-
-  .historico-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
-  .historico-item:last-child { border-bottom: none; }
-
-  .hist-arrow { font-family: var(--font-mono); font-size: 11px; font-weight: 700; white-space: nowrap; padding: 2px 6px; border-radius: 4px; }
-
-  .modal-lg { max-width: 680px; }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 </style>
 </head>
 <body>
@@ -85,6 +148,10 @@
     <div class="sidebar-section">GESTÃO</div>
     <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
     <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
+    <div class="sidebar-section">COMUNICAÇÃO</div>
+    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-wpp">
+      <span class="nav-icon">💬</span> OperaLog Board
+    </a>
   </aside>
 
   <main class="main">
@@ -93,21 +160,17 @@
         <div class="page-title">Board PDCA</div>
         <div class="page-sub">Planos de Melhoria Contínua — Plan → Do → Check → Act</div>
       </div>
-      <div style="display:flex;gap:10px">
-        <a href="#" onclick="verConcluidos()" class="btn btn-ghost">✅ Concluídos</a>
-        <button class="btn btn-primary" onclick="abrirModal()">+ Novo Plano</button>
-      </div>
+      <button class="btn btn-primary" onclick="abrirModal()">+ Novo Plano</button>
     </div>
-
     <div class="board" id="board">
-      <div class="loading" style="grid-column:1/-1">Carregando board...</div>
+      <div class="loading">Carregando board...</div>
     </div>
   </main>
 </div>
 
-<!-- Modal Novo/Editar Plano -->
+<!-- MODAL PLANO -->
 <div class="modal-overlay" id="modal-plano">
-  <div class="modal modal-lg">
+  <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-titulo">Novo Plano PDCA</div>
       <button class="modal-close" onclick="fecharModal()">×</button>
@@ -116,7 +179,7 @@
       <input type="hidden" id="plano-id">
       <div class="form-group">
         <label class="form-label">Título do Plano *</label>
-        <input class="form-input" id="plano-titulo" placeholder="Ex: Reduzir atraso médio da JSL em 40% em 60 dias">
+        <input class="form-input" id="plano-titulo" placeholder="Ex: Reduzir atraso médio da JSL em 40%">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -139,26 +202,22 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Meta (o que queremos atingir)</label>
-        <input class="form-input" id="plano-meta" placeholder="Ex: OTD JSL ≥ 95% por 3 meses consecutivos">
+        <label class="form-label">Meta</label>
+        <input class="form-input" id="plano-meta" placeholder="Ex: OTD JSL ≥ 95% por 3 meses">
       </div>
       <div class="form-group">
         <label class="form-label">Descrição / Plano de ação</label>
-        <textarea class="form-textarea" style="min-height:100px" id="plano-desc" placeholder="Descreva as ações a serem tomadas na etapa Plan..."></textarea>
-      </div>
-      <div id="historico-section" style="display:none">
-        <div class="form-label" style="margin-bottom:8px">📋 Histórico de movimentações</div>
-        <div id="historico-lista" style="max-height:150px;overflow-y:auto;background:var(--surface2);border-radius:8px;padding:8px 12px"></div>
+        <textarea class="form-textarea" id="plano-desc" placeholder="Descreva as ações planejadas..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarPlano()">Salvar Plano</button>
+      <button class="btn btn-primary" id="btn-salvar-plano" onclick="salvarPlano()">Salvar Plano</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Avançar Etapa -->
+<!-- MODAL AVANÇAR -->
 <div class="modal-overlay" id="modal-avancar">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
@@ -170,24 +229,49 @@
       <input type="hidden" id="avancar-tipo">
       <div class="form-group">
         <label class="form-label" id="avancar-label">Comentário sobre a movimentação</label>
-        <textarea class="form-textarea" style="min-height:100px" id="avancar-comentario" placeholder="Descreva o que foi feito / verificado / decidido..."></textarea>
+        <textarea class="form-textarea" id="avancar-comentario" style="min-height:100px" placeholder="Descreva o que foi feito..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharAvancar()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarAvancar()">Confirmar</button>
+      <button class="btn btn-primary" id="btn-confirmar-avancar" onclick="confirmarAvancar()">Confirmar</button>
     </div>
   </div>
 </div>
 
-<script src="/shared.js"></script>
+<div class="toast-container" id="toast-container"></div>
+
 <script>
-const COLUNAS = [
-  { key:'plan', label:'PLAN', subLabel:'Planejar', letter:'P', color:'var(--blue)', colorHex:'#4A9EFF' },
-  { key:'do', label:'DO', subLabel:'Executar', letter:'D', color:'var(--amber)', colorHex:'#F5C842' },
-  { key:'check', label:'CHECK', subLabel:'Verificar', letter:'C', color:'var(--green)', colorHex:'#00C88C' },
-  { key:'act', label:'ACT', subLabel:'Agir', letter:'A', color:'var(--purple)', colorHex:'#C084FC' },
-];
+// ─── SETUP ────────────────────────────────────────────
+const token   = localStorage.getItem('operalog_token');
+const usuario = JSON.parse(localStorage.getItem('operalog_usuario') || '{}');
+if (!token) { window.location.href = '/'; }
+
+document.getElementById('user-name').textContent = usuario.nome || 'Usuário';
+document.getElementById('user-initials').textContent =
+  (usuario.nome || 'U').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', {weekday:'short',day:'2-digit',month:'short'});
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function logout() { localStorage.removeItem('operalog_token'); localStorage.removeItem('operalog_usuario'); window.location.href = '/'; }
+
+function toast(msg, tipo = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (tipo === 'error' ? ' error' : tipo === 'warning' ? ' warning' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function formatDate(date) {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
 
 function prazoClass(prazo) {
   if (!prazo) return '';
@@ -206,21 +290,51 @@ function prazoLabel(prazo) {
   return `📅 ${formatDate(prazo)}`;
 }
 
+const COLUNAS = [
+  { key:'plan',  label:'PLAN',  subLabel:'Planejar', letter:'P', color:'var(--blue)',   hex:'#4A9EFF' },
+  { key:'do',    label:'DO',    subLabel:'Executar', letter:'D', color:'var(--amber)',  hex:'#F5C842' },
+  { key:'check', label:'CHECK', subLabel:'Verificar',letter:'C', color:'var(--green)',  hex:'#00C88C' },
+  { key:'act',   label:'ACT',   subLabel:'Agir',     letter:'A', color:'var(--purple)', hex:'#C084FC' },
+];
+
+// ─── DADOS ────────────────────────────────────────────
 async function carregarBoard() {
-  const data = await api('/api/pdca');
-  if (!data) return;
-  renderBoard(data.board);
+  try {
+    const res = await fetch('/api/pdca', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.status === 401) { logout(); return; }
+    const data = await res.json();
+    renderBoard(data.board);
+  } catch(e) {
+    document.getElementById('board').innerHTML = '<div class="loading">Erro ao carregar. Verifique sua conexão.</div>';
+  }
+}
+
+async function carregarSelects() {
+  try {
+    const [rOps, rTs] = await Promise.all([
+      fetch('/api/operacoes', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/transportadoras', { headers: { 'Authorization': 'Bearer ' + token } })
+    ]);
+    const ops = await rOps.json();
+    const ts  = await rTs.json();
+    const selOp = document.getElementById('plano-op');
+    const selTs = document.getElementById('plano-transp');
+    ops.forEach(o => { selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`; });
+    ts.forEach(t  => { selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
+  } catch(e) { console.log('Erro selects', e); }
 }
 
 function renderBoard(board) {
-  const el = document.getElementById('board');
+  const el      = document.getElementById('board');
+  const isAdmin = usuario.perfil === 'admin';
+
   el.innerHTML = COLUNAS.map(col => {
     const cards = board[col.key] || [];
     return `
       <div class="coluna">
-        <div class="coluna-header" style="border-bottom-color:${col.color}40">
+        <div class="coluna-header" style="border-bottom-color:${col.hex}40">
           <div class="coluna-title">
-            <div class="coluna-letter" style="background:${col.color}20;color:${col.color}">${col.letter}</div>
+            <div class="coluna-letter" style="background:${col.hex}20;color:${col.color}">${col.letter}</div>
             <div>
               <div style="color:${col.color};font-size:13px;font-weight:800">${col.label}</div>
               <div style="font-size:10px;font-weight:600;color:var(--text-muted);font-family:var(--font-mono)">${col.subLabel}</div>
@@ -229,18 +343,19 @@ function renderBoard(board) {
           <span class="coluna-count">${cards.length}</span>
         </div>
         <div class="coluna-body">
-          ${cards.length ? cards.map((p,i) => renderCard(p, col, i)).join('') :
-            `<div class="coluna-empty">Nenhum plano nesta etapa</div>`}
+          ${cards.length ? cards.map((p,i) => renderCard(p, col, i, isAdmin)).join('') :
+            '<div class="coluna-empty">Nenhum plano nesta etapa</div>'}
         </div>
       </div>`;
   }).join('');
 }
 
-function renderCard(p, col, i) {
-  const prazoC = prazoClass(p.prazo);
-  const prazoL = prazoLabel(p.prazo);
-  const isFirst = col.key === 'plan';
-  const isLast = col.key === 'act';
+function renderCard(p, col, i, isAdmin) {
+  const isFirst  = col.key === 'plan';
+  const isLast   = col.key === 'act';
+  const prazoC   = prazoClass(p.prazo);
+  const prazoL   = prazoLabel(p.prazo);
+  const tituloSafe = p.titulo.replace(/'/g,"\\'").replace(/"/g,'&quot;');
 
   return `
     <div class="pdca-card" style="animation-delay:${i*0.06}s">
@@ -255,103 +370,138 @@ function renderCard(p, col, i) {
       <div class="pdca-card-actions">
         ${!isFirst ? `<button class="card-btn voltar" onclick="abrirAvancar('${p.id}','voltar')">← Voltar</button>` : ''}
         <button class="card-btn" onclick="abrirEditar(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
-        ${!isLast ? `<button class="card-btn avancar" onclick="abrirAvancar('${p.id}','avancar')">→ Avançar</button>` :
-          `<button class="card-btn avancar" onclick="abrirAvancar('${p.id}','avancar')">✅ Concluir</button>`}
-        ${isAdmin() ? `<button class="card-btn danger" onclick="deletarPlano('${p.id}', '${p.titulo.replace(/'/g,"\\'")}')">🗑️</button>` : ''}
+        ${!isLast
+          ? `<button class="card-btn avancar" onclick="abrirAvancar('${p.id}','avancar')">→ Avançar</button>`
+          : `<button class="card-btn avancar" onclick="abrirAvancar('${p.id}','avancar')">✅ Concluir</button>`}
+        ${isAdmin ? `<button class="card-btn danger" onclick="excluirPlano('${p.id}','${tituloSafe}')">🗑️</button>` : ''}
       </div>
     </div>`;
 }
 
-async function carregarSelects() {
-  const [ops, ts] = await Promise.all([api('/api/operacoes'), api('/api/transportadoras')]);
-  const selOp = document.getElementById('plano-op');
-  const selTs = document.getElementById('plano-transp');
-  (ops||[]).forEach(o => { selOp.innerHTML += `<option value="${o.id}">${o.cliente} — ${o.local}</option>`; });
-  (ts||[]).forEach(t => { selTs.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
-}
-
-function abrirModal(p = null) {
-  document.getElementById('plano-id').value = p?.id || '';
-  document.getElementById('plano-titulo').value = p?.titulo || '';
-  document.getElementById('plano-resp').value = p?.responsavel || '';
-  document.getElementById('plano-prazo').value = p?.prazo?.split('T')[0] || '';
-  document.getElementById('plano-op').value = p?.operacao_id || '';
-  document.getElementById('plano-transp').value = p?.transportadora_id || '';
-  document.getElementById('plano-meta').value = p?.meta || '';
-  document.getElementById('plano-desc').value = p?.descricao || '';
-  document.getElementById('modal-titulo').textContent = p ? 'Editar Plano' : 'Novo Plano PDCA';
-  const histSection = document.getElementById('historico-section');
-  if (p?.historico?.length) {
-    histSection.style.display = 'block';
-    document.getElementById('historico-lista').innerHTML = p.historico.map(h => `
-      <div class="historico-item">
-        <span class="hist-arrow" style="background:var(--surface);border:1px solid var(--border);color:var(--text)">
-          ${h.etapa_anterior?.toUpperCase()} → ${h.etapa_nova?.toUpperCase()}
-        </span>
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--text)">${h.comentario || '—'}</div>
-          <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">${h.alterado_por || ''} · ${tempoAtras(h.data)}</div>
-        </div>
-      </div>`).join('');
-  } else {
-    histSection.style.display = 'none';
-  }
+// ─── MODAL PLANO ──────────────────────────────────────
+function abrirModal() {
+  document.getElementById('plano-id').value    = '';
+  document.getElementById('plano-titulo').value= '';
+  document.getElementById('plano-resp').value  = '';
+  document.getElementById('plano-prazo').value = '';
+  document.getElementById('plano-op').value    = '';
+  document.getElementById('plano-transp').value= '';
+  document.getElementById('plano-meta').value  = '';
+  document.getElementById('plano-desc').value  = '';
+  document.getElementById('modal-titulo').textContent       = 'Novo Plano PDCA';
+  document.getElementById('btn-salvar-plano').textContent   = 'Salvar Plano';
+  document.getElementById('btn-salvar-plano').disabled      = false;
   document.getElementById('modal-plano').classList.add('aberto');
 }
 
-function abrirEditar(p) { abrirModal(p); }
+function abrirEditar(p) {
+  document.getElementById('plano-id').value    = p.id;
+  document.getElementById('plano-titulo').value= p.titulo;
+  document.getElementById('plano-resp').value  = p.responsavel || '';
+  document.getElementById('plano-prazo').value = p.prazo ? p.prazo.split('T')[0] : '';
+  document.getElementById('plano-op').value    = p.operacao_id || '';
+  document.getElementById('plano-transp').value= p.transportadora_id || '';
+  document.getElementById('plano-meta').value  = p.meta || '';
+  document.getElementById('plano-desc').value  = p.descricao || '';
+  document.getElementById('modal-titulo').textContent       = 'Editar Plano';
+  document.getElementById('btn-salvar-plano').textContent   = 'Salvar';
+  document.getElementById('btn-salvar-plano').disabled      = false;
+  document.getElementById('modal-plano').classList.add('aberto');
+}
+
 function fecharModal() { document.getElementById('modal-plano').classList.remove('aberto'); }
 
 async function salvarPlano() {
-  const id = document.getElementById('plano-id').value;
+  const titulo = document.getElementById('plano-titulo').value.trim();
+  const resp   = document.getElementById('plano-resp').value.trim();
+  if (!titulo || !resp) { alert('Título e responsável são obrigatórios'); return; }
+
+  const id   = document.getElementById('plano-id').value;
   const body = {
-    titulo: document.getElementById('plano-titulo').value.trim(),
-    responsavel: document.getElementById('plano-resp').value.trim(),
-    prazo: document.getElementById('plano-prazo').value || null,
-    operacao_id: document.getElementById('plano-op').value || null,
+    titulo,
+    responsavel:       resp,
+    prazo:             document.getElementById('plano-prazo').value || null,
+    operacao_id:       document.getElementById('plano-op').value || null,
     transportadora_id: document.getElementById('plano-transp').value || null,
-    meta: document.getElementById('plano-meta').value.trim(),
-    descricao: document.getElementById('plano-desc').value.trim()
+    meta:              document.getElementById('plano-meta').value.trim(),
+    descricao:         document.getElementById('plano-desc').value.trim()
   };
-  if (!body.titulo || !body.responsavel) { alert('Título e responsável são obrigatórios'); return; }
-  const url = id ? `/api/pdca/${id}` : '/api/pdca';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiPost(url, body, method);
-  if (res) { fecharModal(); carregarBoard(); toast(id ? 'Plano atualizado!' : 'Plano criado!', 'success'); }
+
+  const btn = document.getElementById('btn-salvar-plano');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(id ? `/api/pdca/${id}` : '/api/pdca', {
+      method:  id ? 'PUT' : 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body:    JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.erro || 'Erro ao salvar'); btn.disabled=false; btn.textContent='Salvar Plano'; return; }
+    fecharModal();
+    toast(id ? 'Plano atualizado! ✅' : 'Plano criado! ✅', 'success');
+    carregarBoard();
+  } catch(e) {
+    alert('Erro de conexão. Tente novamente.');
+    btn.disabled = false; btn.textContent = 'Salvar Plano';
+  }
 }
 
+// ─── AVANÇAR/VOLTAR ───────────────────────────────────
 function abrirAvancar(id, tipo) {
-  document.getElementById('avancar-id').value = id;
+  document.getElementById('avancar-id').value  = id;
   document.getElementById('avancar-tipo').value = tipo;
-  document.getElementById('avancar-label').textContent = tipo === 'avancar' ? 'Descreva o que foi feito antes de avançar para a próxima etapa' : 'Explique por que está retrocedendo esta etapa';
-  document.getElementById('avancar-titulo').textContent = tipo === 'avancar' ? '→ Avançar Etapa' : '← Retroceder Etapa';
   document.getElementById('avancar-comentario').value = '';
+  document.getElementById('avancar-titulo').textContent =
+    tipo === 'avancar' ? '→ Avançar Etapa' : '← Retroceder Etapa';
+  document.getElementById('avancar-label').textContent =
+    tipo === 'avancar' ? 'Descreva o que foi feito antes de avançar' : 'Explique por que está retrocedendo';
+  document.getElementById('btn-confirmar-avancar').disabled = false;
+  document.getElementById('btn-confirmar-avancar').textContent = 'Confirmar';
   document.getElementById('modal-avancar').classList.add('aberto');
 }
 
 function fecharAvancar() { document.getElementById('modal-avancar').classList.remove('aberto'); }
 
 async function confirmarAvancar() {
-  const id = document.getElementById('avancar-id').value;
-  const tipo = document.getElementById('avancar-tipo').value;
+  const id         = document.getElementById('avancar-id').value;
+  const tipo       = document.getElementById('avancar-tipo').value;
   const comentario = document.getElementById('avancar-comentario').value.trim();
   if (!comentario) { alert('Adicione um comentário sobre a movimentação'); return; }
-  const res = await apiPost(`/api/pdca/${id}/${tipo}`, { comentario }, 'PUT');
-  if (res) { fecharAvancar(); carregarBoard(); toast(tipo === 'avancar' ? '→ Etapa avançada!' : '← Etapa retrocedida', tipo === 'avancar' ? 'success' : 'warning'); }
+
+  const btn = document.getElementById('btn-confirmar-avancar');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(`/api/pdca/${id}/${tipo}`, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ comentario })
+    });
+    if (res.ok) {
+      fecharAvancar();
+      toast(tipo === 'avancar' ? '→ Etapa avançada! ✅' : '← Etapa retrocedida', tipo === 'avancar' ? 'success' : 'warning');
+      carregarBoard();
+    } else {
+      alert('Erro ao mover etapa.');
+      btn.disabled = false; btn.textContent = 'Confirmar';
+    }
+  } catch(e) { alert('Erro de conexão.'); btn.disabled=false; btn.textContent='Confirmar'; }
 }
 
-async function deletarPlano(id, titulo) {
-  if (!confirm(`Excluir o plano "${titulo}"?\n\nEsta ação não pode ser desfeita.`)) return;
-  const res = await apiDelete(`/api/pdca/${id}`);
-  if (res) { toast('Plano excluído', 'success'); carregarBoard(); }
+// ─── EXCLUIR ──────────────────────────────────────────
+async function excluirPlano(id, titulo) {
+  if (!confirm(`Excluir o plano "${titulo}" permanentemente?`)) return;
+  try {
+    const res = await fetch(`/api/pdca/${id}`, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) { toast('Plano excluído.', 'success'); carregarBoard(); }
+    else { alert('Erro ao excluir plano.'); }
+  } catch(e) { alert('Erro de conexão.'); }
 }
 
-async function verConcluidos() {
-  const data = await api('/api/pdca/concluidos');
-  if (!data?.length) { toast('Nenhum plano concluído ainda', 'info'); return; }
-  alert(`${data.length} planos concluídos. Módulo de histórico em breve!`);
-}
-
+// ─── INIT ─────────────────────────────────────────────
 carregarBoard();
 carregarSelects();
 </script>
