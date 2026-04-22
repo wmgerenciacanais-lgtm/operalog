@@ -19,6 +19,7 @@ app.use('/api/transportadoras',require('./routes/transportadoras'));
 app.use('/api/ocorrencias',    require('./routes/ocorrencias'));
 app.use('/api/pdca',           require('./routes/pdca'));
 app.use('/api/kpi',            require('./routes/kpi'));
+app.use('/api/entregas',       require('./routes/entregas'));
 
 // ─── SPA FALLBACK ─────────────────────────────────────
 app.get('*', (req, res) => {
