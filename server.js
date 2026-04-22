@@ -12,13 +12,14 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── ROTAS DA API ─────────────────────────────────────
-app.use('/api/auth',           require('./routes/auth'));
-app.use('/api/dashboard',      require('./routes/dashboard'));
-app.use('/api/operacoes',      require('./routes/operacoes'));
-app.use('/api/transportadoras',require('./routes/transportadoras'));
-app.use('/api/ocorrencias',    require('./routes/ocorrencias'));
-app.use('/api/pdca',           require('./routes/pdca'));
-app.use('/api/kpi',            require('./routes/kpi'));
+app.use('/api/auth',            require('./routes/auth'));
+app.use('/api/dashboard',       require('./routes/dashboard'));
+app.use('/api/operacoes',       require('./routes/operacoes'));
+app.use('/api/transportadoras', require('./routes/transportadoras'));
+app.use('/api/ocorrencias',     require('./routes/ocorrencias'));
+app.use('/api/pdca',            require('./routes/pdca'));
+app.use('/api/kpi',             require('./routes/kpi'));
+app.use('/api/entregas',        require('./routes/entregas'));
 
 // ─── SPA FALLBACK ─────────────────────────────────────
 app.get('*', (req, res) => {
