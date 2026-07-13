@@ -183,34 +183,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger para atualizar score automaticamente
-CREATE OR REPLACE FUNCTION trigger_atualizar_score()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.score_calculado := calcular_score_pet(
-    NEW.otd,
-    NEW.atraso_medio,
-    NEW.ocorrencias_mil,
-    NEW.satisfacao
-  );
-
-  -- Atualiza score médio na transportadora
-  UPDATE transportadoras
-  SET score = (
-    SELECT ROUND(AVG(score_calculado), 1)
-    FROM pet_registros
-    WHERE transportadora_id = NEW.transportadora_id
-    AND criado_em >= NOW() - INTERVAL '90 days'
-  )
-  WHERE id = NEW.transportadora_id;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_score_pet
-BEFORE INSERT OR UPDATE ON pet_registros
-FOR EACH ROW EXECUTE FUNCTION trigger_atualizar_score();
+-- NOTA (2026): o trigger trg_score_pet que existia aqui foi removido em produção —
+-- ele rodava BEFORE INSERT, então a média de score nunca incluía o próprio registro
+-- novo, e causava conflitos. O cálculo do score_calculado e a atualização de
+-- transportadoras.score agora acontecem em routes/transportadoras.js, DEPOIS do
+-- insert em pet_registros. A função calcular_score_pet() acima ficou sem uso —
+-- pode ser removida, mantida aqui só como referência da fórmula original em SQL.
 
 -- Trigger para atualizar timestamp
 CREATE OR REPLACE FUNCTION trigger_updated_at()
