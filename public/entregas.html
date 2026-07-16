@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OperaLog — Acompanhamento de Entregas</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060A0F; --surface:#0D1420; --surface2:#111B2E;
+  --border:rgba(255,255,255,0.08);
+  --green:#00C88C; --green-dim:rgba(0,200,140,0.15);
+  --amber:#F5C842; --amber-dim:rgba(245,200,66,0.15);
+  --blue:#4A9EFF; --blue-dim:rgba(74,158,255,0.15);
+  --red:#FF4D6A; --red-dim:rgba(255,77,106,0.15);
+  --purple:#C084FC; --purple-dim:rgba(192,132,252,0.15);
+  --teal:#2DD4BF; --teal-dim:rgba(45,212,191,0.15);
+  --text:#FFFFFF; --text-muted:#A0AEC0;
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,140,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,140,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:62px;background:rgba(6,10,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:14px;color:#000;}
+.logo-text{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text);}
+.logo-text span{color:var(--green);}
+.topbar-center{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,200,140,0.4);}50%{box-shadow:0 0 0 5px transparent;}}
+.topbar-center span{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text);letter-spacing:0.5px;}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.clock{font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--text);text-align:right;}
+.clock-date{font-size:10px;color:var(--text-muted);}
+.user-menu{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s;}
+.user-menu:hover{border-color:var(--green);}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;}
+.user-name{font-size:13px;font-weight:700;color:var(--text);}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 62px);position:relative;z-index:1;}
+.sidebar{border-right:1px solid var(--border);padding:20px 12px;background:rgba(13,20,32,0.6);display:flex;flex-direction:column;gap:2px;}
+.sidebar-section{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;padding:14px 12px 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;font-size:14px;font-weight:600;color:var(--text-muted);text-decoration:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.ativo{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,200,140,0.25);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;font-family:var(--font-mono);}
+.nav-wpp{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;color:#fff;text-decoration:none;background:linear-gradient(135deg,#128C7E,#25D366);margin-top:8px;transition:all 0.15s;}
+.nav-wpp:hover{background:linear-gradient(135deg,#075E54,#128C7E);}
+
+/* MAIN */
+.main{padding:24px 28px;overflow-y:auto;}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.page-sub{font-size:13px;font-weight:500;color:var(--text-muted);margin-top:3px;}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;animation:fadeUp 0.3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.kpi-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-mono);margin-bottom:8px;}
+.kpi-value{font-family:var(--font-display);font-size:28px;font-weight:800;line-height:1;}
+.kpi-sub{font-size:11px;font-weight:600;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono);}
+
+/* FILTROS */
+.filtros{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.filtro-btn{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font-body);transition:all 0.15s;}
+.filtro-btn.ativo{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.filtro-btn:hover{border-color:var(--green);}
+
+/* BOTÕES */
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:var(--font-body);transition:all 0.15s;}
+.btn-primary{background:var(--green);color:#000;font-weight:800;}
+.btn-primary:hover{background:#00e6a3;}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--green);color:var(--green);}
+
+/* LISTA ENTREGAS */
+.entregas-list{display:flex;flex-direction:column;gap:10px;}
+.entrega-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;border-left:4px solid transparent;transition:all 0.15s;animation:fadeUp 0.3s ease both;}
+.entrega-item:hover{border-color:rgba(255,255,255,0.15);}
+.entrega-item.aguardando{border-left-color:var(--text-muted);}
+.entrega-item.em_rota{border-left-color:var(--blue);}
+.entrega-item.entregue{border-left-color:var(--green);}
+.entrega-item.atrasado{border-left-color:var(--red);}
+.entrega-item.ocorrencia{border-left-color:var(--amber);}
+.entrega-item.cancelado{border-left-color:var(--purple);}
+
+.entrega-header{padding:14px 18px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.entrega-codigo{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px;}
+.entrega-titulo{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--text);}
+.entrega-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+
+.entrega-meta{padding:0 18px 10px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-weight:600;color:var(--text-muted);font-family:var(--font-mono);}
+.entrega-meta span{display:flex;align-items:center;gap:4px;}
+
+.entrega-actions{padding:10px 18px 14px;display:flex;gap:8px;border-top:1px solid var(--border);}
+.btn-sm{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font-body);transition:all 0.15s;}
+.btn-sm:hover{border-color:var(--green);color:var(--green);}
+.btn-sm.blue{background:var(--blue-dim);color:var(--blue);border-color:rgba(74,158,255,0.3);}
+.btn-sm.green{background:var(--green);color:#000;border-color:var(--green);}
+.btn-sm.red{background:var(--red-dim);color:var(--red);border-color:rgba(255,77,106,0.3);}
+.btn-sm.amber{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,200,66,0.3);}
+
+/* STATUS PILLS */
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:var(--font-mono);}
+.s-aguardando{background:rgba(160,174,192,0.15);color:var(--text-muted);}
+.s-em_rota{background:var(--blue-dim);color:var(--blue);}
+.s-entregue{background:var(--green-dim);color:var(--green);}
+.s-atrasado{background:var(--red-dim);color:var(--red);}
+.s-ocorrencia{background:var(--amber-dim);color:var(--amber);}
+.s-cancelado{background:var(--purple-dim);color:var(--purple);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.aberto{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease;}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text);}
+.modal-close{width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+.form-group{margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.form-label{display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;font-weight:500;outline:none;transition:all 0.15s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--green);background:rgba(0,200,140,0.05);}
+.form-input::placeholder{color:rgba(255,255,255,0.2);}
+.form-select option{background:var(--surface);color:var(--text);}
+.form-textarea{resize:vertical;min-height:80px;}
+
+/* LOADING / EMPTY */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text-muted);font-size:14px;font-weight:600;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--surface);border-radius:10px;padding:14px 20px;font-family:var(--font-body);font-size:14px;font-weight:700;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,0.3);animation:fadeUp 0.2s ease;max-width:320px;border-left:4px solid var(--green);}
+.toast.error{border-left-color:var(--red);}
+.toast.warning{border-left-color:var(--amber);}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">OL</div>
+    <div class="logo-text">Opera<span>Log</span></div>
+  </div>
+  <div class="topbar-center">
+    <div class="pulse"></div>
+    <span>PRODUSLOG · ACOMPANHAMENTO DE ENTREGAS</span>
+  </div>
+  <div class="topbar-right">
+    <div class="clock"><div id="clock-time">--:--:--</div><div class="clock-date" id="clock-date">---</div></div>
+    <div class="user-menu" onclick="logout()">
+      <div class="user-avatar" id="user-initials">?</div>
+      <span class="user-name" id="user-name">Usuário</span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">PRINCIPAL</div>
+    <a href="/dashboard.html" class="nav-item"><span class="nav-icon">◈</span> Visão Geral</a>
+    <a href="/operacoes.html" class="nav-item"><span class="nav-icon">⬡</span> Operações IN HOUSE</a>
+    <a href="/transportadoras.html" class="nav-item"><span class="nav-icon">◎</span> Transportadoras</a>
+    <a href="/pdca.html" class="nav-item"><span class="nav-icon">▦</span> Planos PDCA</a>
+    <div class="sidebar-section">GESTÃO</div>
+    <a href="/ocorrencias.html" class="nav-item"><span class="nav-icon">⊕</span> Ocorrências</a>
+    <a href="/entregas.html" class="nav-item ativo"><span class="nav-icon">🚚</span> Entregas</a>
+    <a href="/relatorios.html" class="nav-item"><span class="nav-icon">◱</span> Relatórios</a>
+    <div class="sidebar-section">COMUNICAÇÃO</div>
+    <a href="https://chat.whatsapp.com/EK7TwzeeJaK9Bk7skWHtt2" target="_blank" class="nav-wpp">
+      <span class="nav-icon">💬</span> OperaLog Board
+    </a>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">🚚 Acompanhamento de Entregas</div>
+        <div class="page-sub">Tracking em tempo real — status, SLA e performance por transportadora</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModal()">+ Nova Entrega</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi-card" style="border-top:3px solid var(--text-muted)">
+        <div class="kpi-label">Aguardando</div>
+        <div class="kpi-value" style="color:var(--text-muted)" id="k-aguardando">—</div>
+        <div class="kpi-sub">Para despachar</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--blue)">
+        <div class="kpi-label">Em Rota</div>
+        <div class="kpi-value" style="color:var(--blue)" id="k-rota">—</div>
+        <div class="kpi-sub">Em trânsito agora</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--green)">
+        <div class="kpi-label">Entregues Hoje</div>
+        <div class="kpi-value" style="color:var(--green)" id="k-entregues">—</div>
+        <div class="kpi-sub">Concluídas</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--red)">
+        <div class="kpi-label">Atrasadas</div>
+        <div class="kpi-value" style="color:var(--red)" id="k-atrasadas">—</div>
+        <div class="kpi-sub">Acima do SLA</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--amber)">
+        <div class="kpi-label">OTD do Dia</div>
+        <div class="kpi-value" style="color:var(--amber)" id="k-otd">—</div>
+        <div class="kpi-sub">On Time Delivery</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros">
+      <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todas</button>
+      <button class="filtro-btn" onclick="filtrar('aguardando',this)">⏳ Aguardando</button>
+      <button class="filtro-btn" onclick="filtrar('em_rota',this)">🚚 Em Rota</button>
+      <button class="filtro-btn" onclick="filtrar('entregue',this)">✅ Entregues</button>
+      <button class="filtro-btn" onclick="filtrar('atrasado',this)" style="color:var(--red);border-color:rgba(255,77,106,0.4)">🔴 Atrasadas</button>
+      <button class="filtro-btn" onclick="filtrar('ocorrencia',this)" style="color:var(--amber);border-color:rgba(245,200,66,0.4)">⚠️ Ocorrência</button>
+    </div>
+
+    <!-- LISTA -->
+    <div class="entregas-list" id="entregas-list">
+      <div class="loading">Carregando entregas...</div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL NOVA ENTREGA -->
+<div class="modal-overlay" id="modal-entrega">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-titulo">Nova Entrega</div>
+      <button class="modal-close" onclick="fecharModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="e-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nº Pedido / NF</label>
+          <input class="form-input" id="e-codigo" placeholder="Ex: NF-00123">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Previsão de Entrega (SLA) *</label>
+          <input class="form-input" type="datetime-local" id="e-previsao">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição da Carga</label>
+        <input class="form-input" id="e-desc" placeholder="Ex: 1.200 caixas Seara — produto resfriado">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Origem</label>
+          <input class="form-input" id="e-origem" placeholder="Ex: CD Cajamar">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destino *</label>
+          <input class="form-input" id="e-destino" placeholder="Ex: Seara Jundiaí">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Transportadora</label>
+          <select class="form-select" id="e-transp"><option value="">— Selecione —</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Operação</label>
+          <select class="form-select" id="e-op"><option value="">— Selecione —</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Motorista</label>
+          <input class="form-input" id="e-motorista" placeholder="Nome do motorista">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Placa do Veículo</label>
+          <input class="form-input" id="e-placa" placeholder="Ex: ABC-1234">
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Peso (kg)</label>
+          <input class="form-input" type="number" id="e-peso" placeholder="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Volume (m³)</label>
+          <input class="form-input" type="number" id="e-volume" placeholder="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Qtd Volumes</label>
+          <input class="form-input" type="number" id="e-qtd" placeholder="1" min="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea class="form-textarea" id="e-notas" placeholder="Informações adicionais sobre a entrega..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-e" onclick="salvarEntrega()">Registrar Entrega</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL STATUS -->
+<div class="modal-overlay" id="modal-status">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="status-titulo">Atualizar Status</div>
+      <button class="modal-close" onclick="fecharStatus()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="status-id">
+      <input type="hidden" id="status-valor">
+      <div class="form-group" id="status-ocorrencia-group" style="display:none">
+        <label class="form-label">Descreva o problema / ocorrência</label>
+        <textarea class="form-textarea" id="status-ocorrencia" placeholder="O que aconteceu com essa entrega?"></textarea>
+      </div>
+      <div class="form-group" id="status-data-group" style="display:none">
+        <label class="form-label">Data e hora da entrega</label>
+        <input class="form-input" type="datetime-local" id="status-data">
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);font-weight:500" id="status-msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharStatus()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-status" onclick="confirmarStatus()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ─── SETUP ────────────────────────────────────────────
+const token   = localStorage.getItem('operalog_token');
+const usuario = JSON.parse(localStorage.getItem('operalog_usuario') || '{}');
+if (!token) { window.location.href = '/'; }
+
+document.getElementById('user-name').textContent = usuario.nome || 'Usuário';
+document.getElementById('user-initials').textContent =
+  (usuario.nome || 'U').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+}
+updateClock(); setInterval(updateClock, 1000);
+function logout(){localStorage.removeItem('operalog_token');localStorage.removeItem('operalog_usuario');window.location.href='/';}
+
+function toast(msg, tipo='success'){
+  const el=document.createElement('div');
+  el.className='toast'+(tipo==='error'?' error':tipo==='warning'?' warning':'');
+  el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+function formatDateTime(dt){
+  if(!dt) return '—';
+  return new Date(dt).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function tempoAte(dt){
+  if(!dt) return '';
+  const diff=Math.floor((new Date(dt)-new Date())/60000);
+  if(diff<0) return `⚠️ ${Math.abs(diff)}min atrasado`;
+  if(diff<60) return `⚡ ${diff}min restantes`;
+  if(diff<1440) return `🕐 ${Math.floor(diff/60)}h restantes`;
+  return `📅 ${Math.floor(diff/1440)}d restantes`;
+}
+
+const STATUS_ICONS = {aguardando:'⏳',em_rota:'🚚',entregue:'✅',atrasado:'🔴',ocorrencia:'⚠️',cancelado:'❌'};
+const STATUS_LABELS = {aguardando:'Aguardando',em_rota:'Em Rota',entregue:'Entregue',atrasado:'Atrasado',ocorrencia:'Ocorrência',cancelado:'Cancelado'};
+
+// ─── DADOS ────────────────────────────────────────────
+let todasEntregas = [];
+let filtroAtual = 'todos';
+
+async function carregarResumo(){
+  try {
+    const res = await fetch('/api/entregas/resumo',{headers:{'Authorization':'Bearer '+token}});
+    const d = await res.json();
+    document.getElementById('k-aguardando').textContent = d.aguardando || 0;
+    document.getElementById('k-rota').textContent = d.em_rota || 0;
+    document.getElementById('k-entregues').textContent = d.entregues_hoje || 0;
+    document.getElementById('k-atrasadas').textContent = d.atrasadas || 0;
+    document.getElementById('k-otd').textContent = d.otd_percentual ? d.otd_percentual+'%' : '—';
+  } catch(e){}
+}
+
+async function carregarEntregas(){
+  try {
+    const res = await fetch('/api/entregas?limit=100',{headers:{'Authorization':'Bearer '+token}});
+    if(res.status===401){logout();return;}
+    todasEntregas = await res.json();
+    renderEntregas();
+  } catch(e){
+    document.getElementById('entregas-list').innerHTML='<div class="loading">Erro ao carregar. Verifique sua conexão.</div>';
+  }
+}
+
+async function carregarSelects(){
+  try {
+    const [rT,rO] = await Promise.all([
+      fetch('/api/transportadoras',{headers:{'Authorization':'Bearer '+token}}),
+      fetch('/api/operacoes',{headers:{'Authorization':'Bearer '+token}})
+    ]);
+    const ts=await rT.json(), ops=await rO.json();
+    const sT=document.getElementById('e-transp'), sO=document.getElementById('e-op');
+    ts.forEach(t=>{sT.innerHTML+=`<option value="${t.id}">${t.nome}</option>`;});
+    ops.forEach(o=>{sO.innerHTML+=`<option value="${o.id}">${o.cliente} — ${o.local}</option>`;});
+  } catch(e){}
+}
+
+function filtrar(tipo,btn){
+  filtroAtual=tipo;
+  document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderEntregas();
+}
+
+function renderEntregas(){
+  let es=todasEntregas;
+  if(filtroAtual!=='todos') es=es.filter(e=>e.status===filtroAtual);
+
+  const list=document.getElementById('entregas-list');
+  const isAdmin=usuario.perfil==='admin';
+
+  if(!es.length){
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">🚚</div><div class="empty-title">Nenhuma entrega encontrada</div><div style="font-size:14px;font-weight:500">Clique em "+ Nova Entrega" para registrar</div></div>`;
+    return;
+  }
+
+  list.innerHTML=es.map((e,i)=>`
+    <div class="entrega-item ${e.status}" style="animation-delay:${i*0.04}s">
+      <div class="entrega-header">
+        <div>
+          ${e.codigo?`<div class="entrega-codigo">📋 ${e.codigo}</div>`:''}
+          <div class="entrega-titulo">${e.descricao||e.destino}</div>
+        </div>
+        <div class="entrega-badges">
+          <span class="status-pill s-${e.status}">${STATUS_ICONS[e.status]||''} ${STATUS_LABELS[e.status]||e.status}</span>
+          ${e.dentro_sla===true?'<span class="status-pill" style="background:var(--green-dim);color:var(--green)">✅ No SLA</span>':''}
+          ${e.dentro_sla===false?'<span class="status-pill" style="background:var(--red-dim);color:var(--red)">❌ Fora do SLA</span>':''}
+        </div>
+      </div>
+      <div class="entrega-meta">
+        ${e.origem?`<span>📍 ${e.origem} → ${e.destino}</span>`:`<span>📍 ${e.destino}</span>`}
+        ${e.transportadora_nome?`<span>🚛 ${e.transportadora_nome}</span>`:''}
+        ${e.motorista?`<span>👤 ${e.motorista}</span>`:''}
+        ${e.veiculo_placa?`<span>🚗 ${e.veiculo_placa}</span>`:''}
+        ${e.data_previsao&&e.status!=='entregue'?`<span>${tempoAte(e.data_previsao)}</span>`:''}
+        ${e.data_previsao?`<span>⏰ SLA: ${formatDateTime(e.data_previsao)}</span>`:''}
+        ${e.data_entrega?`<span>✅ Entregue: ${formatDateTime(e.data_entrega)}</span>`:''}
+        ${e.atraso_minutos>0?`<span style="color:var(--red)">⚠️ Atraso: ${Math.floor(e.atraso_minutos/60)}h${e.atraso_minutos%60}min</span>`:''}
+        ${e.qtd_volumes?`<span>📦 ${e.qtd_volumes} vol.</span>`:''}
+        ${e.peso_kg?`<span>⚖️ ${e.peso_kg}kg</span>`:''}
+      </div>
+      ${e.ocorrencia?`<div style="padding:8px 18px 10px;font-size:13px;color:var(--amber);font-weight:600">⚠️ ${e.ocorrencia}</div>`:''}
+      <div class="entrega-actions">
+        ${e.status==='aguardando'?`<button class="btn-sm blue" onclick="atualizarStatus('${e.id}','em_rota')">🚚 Despachar</button>`:''}
+        ${e.status==='em_rota'?`<button class="btn-sm green" onclick="atualizarStatus('${e.id}','entregue')">✅ Confirmar Entrega</button>`:''}
+        ${e.status==='em_rota'?`<button class="btn-sm red" onclick="atualizarStatus('${e.id}','atrasado')">🔴 Marcar Atraso</button>`:''}
+        ${e.status==='em_rota'?`<button class="btn-sm amber" onclick="atualizarStatus('${e.id}','ocorrencia')">⚠️ Registrar Ocorrência</button>`:''}
+        ${e.status==='aguardando'?`<button class="btn-sm" onclick="editarEntrega(${JSON.stringify(e).replace(/"/g,'&quot;')})">✏️ Editar</button>`:''}
+        ${isAdmin?`<button class="btn-sm red" onclick="excluirEntrega('${e.id}')">🗑️</button>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── MODAL NOVA ENTREGA ───────────────────────────────
+function abrirModal(){
+  document.getElementById('e-id').value='';
+  document.getElementById('e-codigo').value='';
+  document.getElementById('e-desc').value='';
+  document.getElementById('e-origem').value='';
+  document.getElementById('e-destino').value='';
+  document.getElementById('e-transp').value='';
+  document.getElementById('e-op').value='';
+  document.getElementById('e-motorista').value='';
+  document.getElementById('e-placa').value='';
+  document.getElementById('e-peso').value='';
+  document.getElementById('e-volume').value='';
+  document.getElementById('e-qtd').value='1';
+  document.getElementById('e-notas').value='';
+  document.getElementById('e-previsao').value='';
+  document.getElementById('modal-titulo').textContent='Nova Entrega';
+  document.getElementById('btn-salvar-e').textContent='Registrar Entrega';
+  document.getElementById('btn-salvar-e').disabled=false;
+  document.getElementById('modal-entrega').classList.add('aberto');
+}
+
+function editarEntrega(e){
+  document.getElementById('e-id').value=e.id;
+  document.getElementById('e-codigo').value=e.codigo||'';
+  document.getElementById('e-desc').value=e.descricao||'';
+  document.getElementById('e-origem').value=e.origem||'';
+  document.getElementById('e-destino').value=e.destino||'';
+  document.getElementById('e-transp').value=e.transportadora_id||'';
+  document.getElementById('e-op').value=e.operacao_id||'';
+  document.getElementById('e-motorista').value=e.motorista||'';
+  document.getElementById('e-placa').value=e.veiculo_placa||'';
+  document.getElementById('e-peso').value=e.peso_kg||'';
+  document.getElementById('e-volume').value=e.volume_m3||'';
+  document.getElementById('e-qtd').value=e.qtd_volumes||1;
+  document.getElementById('e-notas').value=e.notas||'';
+  document.getElementById('e-previsao').value=e.data_previsao?e.data_previsao.slice(0,16):'';
+  document.getElementById('modal-titulo').textContent='Editar Entrega';
+  document.getElementById('btn-salvar-e').textContent='Salvar';
+  document.getElementById('btn-salvar-e').disabled=false;
+  document.getElementById('modal-entrega').classList.add('aberto');
+}
+
+function fecharModal(){document.getElementById('modal-entrega').classList.remove('aberto');}
+
+async function salvarEntrega(){
+  const destino=document.getElementById('e-destino').value.trim();
+  const previsao=document.getElementById('e-previsao').value;
+  if(!destino||!previsao){alert('Destino e previsão de entrega são obrigatórios');return;}
+
+  const id=document.getElementById('e-id').value;
+  const body={
+    codigo:document.getElementById('e-codigo').value.trim(),
+    descricao:document.getElementById('e-desc').value.trim(),
+    origem:document.getElementById('e-origem').value.trim(),
+    destino,
+    transportadora_id:document.getElementById('e-transp').value||null,
+    operacao_id:document.getElementById('e-op').value||null,
+    motorista:document.getElementById('e-motorista').value.trim(),
+    veiculo_placa:document.getElementById('e-placa').value.trim(),
+    data_previsao:previsao,
+    peso_kg:parseFloat(document.getElementById('e-peso').value)||null,
+    volume_m3:parseFloat(document.getElementById('e-volume').value)||null,
+    qtd_volumes:parseInt(document.getElementById('e-qtd').value)||1,
+    notas:document.getElementById('e-notas').value.trim()
+  };
+
+  const btn=document.getElementById('btn-salvar-e');
+  btn.disabled=true; btn.textContent='Salvando...';
+
+  try {
+    const res=await fetch(id?`/api/entregas/${id}`:'/api/entregas',{
+      method:id?'PUT':'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify(body)
+    });
+    const data=await res.json();
+    if(!res.ok){alert(data.erro||'Erro ao salvar');btn.disabled=false;btn.textContent='Registrar Entrega';return;}
+    fecharModal();
+    toast(id?'Entrega atualizada! ✅':'Entrega registrada! ✅','success');
+    carregarEntregas(); carregarResumo();
+  } catch(e){
+    alert('Erro de conexão.');btn.disabled=false;btn.textContent='Registrar Entrega';
+  }
+}
+
+// ─── ATUALIZAR STATUS ─────────────────────────────────
+function atualizarStatus(id, novoStatus){
+  document.getElementById('status-id').value=id;
+  document.getElementById('status-valor').value=novoStatus;
+  document.getElementById('status-ocorrencia-group').style.display='none';
+  document.getElementById('status-data-group').style.display='none';
+  document.getElementById('btn-confirmar-status').disabled=false;
+  document.getElementById('btn-confirmar-status').textContent='Confirmar';
+
+  const titulos={em_rota:'🚚 Despachar para Entrega',entregue:'✅ Confirmar Entrega',atrasado:'🔴 Marcar como Atrasada',ocorrencia:'⚠️ Registrar Ocorrência'};
+  const msgs={
+    em_rota:'O veículo saiu para entrega. O status será atualizado para EM ROTA.',
+    entregue:'Confirme que a entrega foi realizada com sucesso.',
+    atrasado:'A entrega será marcada como ATRASADA e o atraso será calculado automaticamente.',
+    ocorrencia:'Descreva o problema que ocorreu com esta entrega.'
+  };
+
+  document.getElementById('status-titulo').textContent=titulos[novoStatus]||'Atualizar Status';
+  document.getElementById('status-msg').textContent=msgs[novoStatus]||'';
+
+  if(novoStatus==='ocorrencia') document.getElementById('status-ocorrencia-group').style.display='block';
+  if(novoStatus==='entregue') document.getElementById('status-data-group').style.display='block';
+
+  document.getElementById('modal-status').classList.add('aberto');
+}
+
+function fecharStatus(){document.getElementById('modal-status').classList.remove('aberto');}
+
+async function confirmarStatus(){
+  const id=document.getElementById('status-id').value;
+  const status=document.getElementById('status-valor').value;
+  const ocorrencia=document.getElementById('status-ocorrencia').value.trim();
+  const dataEntrega=document.getElementById('status-data').value;
+
+  if(status==='ocorrencia'&&!ocorrencia){alert('Descreva o problema');return;}
+
+  const btn=document.getElementById('btn-confirmar-status');
+  btn.disabled=true; btn.textContent='Salvando...';
+
+  try {
+    const res=await fetch(`/api/entregas/${id}/status`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({status,ocorrencia:ocorrencia||null,data_entrega:dataEntrega||null})
+    });
+    if(res.ok){
+      fecharStatus();
+      const msgs={em_rota:'Saiu para entrega! 🚚',entregue:'Entrega confirmada! ✅',atrasado:'Marcada como atrasada 🔴',ocorrencia:'Ocorrência registrada ⚠️'};
+      toast(msgs[status]||'Status atualizado!','success');
+      carregarEntregas(); carregarResumo();
+    } else {
+      const d=await res.json(); alert(d.erro||'Erro ao atualizar');
+      btn.disabled=false; btn.textContent='Confirmar';
+    }
+  } catch(e){alert('Erro de conexão.');btn.disabled=false;btn.textContent='Confirmar';}
+}
+
+// ─── EXCLUIR ──────────────────────────────────────────
+async function excluirEntrega(id){
+  if(!confirm('Excluir esta entrega permanentemente?')) return;
+  try {
+    const res=await fetch(`/api/entregas/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+    if(res.ok){toast('Entrega excluída.','success');carregarEntregas();carregarResumo();}
+    else alert('Erro ao excluir.');
+  } catch(e){alert('Erro de conexão.');}
+}
+
+// ─── INIT ─────────────────────────────────────────────
+carregarEntregas();
+carregarResumo();
+carregarSelects();
+setInterval(()=>{carregarEntregas();carregarResumo();}, 60000);
+</script>
+</body>
+</html>
